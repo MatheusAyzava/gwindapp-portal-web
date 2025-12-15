@@ -118,7 +118,7 @@ export function App() {
   );
 
   function abrirPassagensAntigo() {
-    window.open("http://localhost:3000", "_blank");
+    window.open("https://gwindapp-passagen.netlify.app/login", "_blank");
   }
 
   const qtdEventosNumero =
