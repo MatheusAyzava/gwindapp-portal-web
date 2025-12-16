@@ -921,7 +921,7 @@ export function App() {
 
           <div className="form-row">
             <label>
-              Qtde Técnicos
+              <span>Qtde Técnicos</span>
               <input
                 type="number"
                 value={qtdTecnicos}
@@ -932,7 +932,7 @@ export function App() {
 
           <div className="form-row">
             <label>
-              Supervisor
+              <span>Supervisor</span>
               <input
                 value={supervisor}
                 onChange={(e) => setSupervisor(e.target.value)}
@@ -942,7 +942,7 @@ export function App() {
 
           <div className="form-row">
             <label>
-              Técnico Líder
+              <span>Técnico Líder</span>
               <input
                 value={tecnicoLider}
                 onChange={(e) => setTecnicoLider(e.target.value)}
@@ -952,7 +952,7 @@ export function App() {
 
           <div className="form-row">
             <label>
-              Nome dos Técnicos
+              <span>Nome dos Técnicos</span>
               <input
                 value={nomesTecnicos}
                 onChange={(e) => setNomesTecnicos(e.target.value)}
@@ -962,7 +962,7 @@ export function App() {
 
           <div className="form-row">
             <label>
-              Tipo de Hora
+              <span>Tipo de Hora</span>
               <input
                 value={tipoHora}
                 onChange={(e) => setTipoHora(e.target.value)}
@@ -972,7 +972,7 @@ export function App() {
 
           <div className="form-row">
             <label>
-              Qtde de Eventos
+              <span>Qtde de Eventos</span>
               <select
                 value={qtdEventos}
                 onChange={(e) => setQtdEventos(e.target.value)}
@@ -995,7 +995,7 @@ export function App() {
           </h3>
           <div className="form-row">
             <label>
-              01 - Hora Início
+              <span>01 - Hora Início</span>
               <input
                 type="time"
                 value={horaInicio}
@@ -1005,7 +1005,7 @@ export function App() {
           </div>
           <div className="form-row">
             <label>
-              01 - Hora fim
+              <span>01 - Hora fim</span>
               <input
                 type="time"
                 value={horaFim}
@@ -1022,7 +1022,7 @@ export function App() {
               </h3>
               <div className="form-row">
                 <label>
-                  02 - Hora Início
+                  <span>02 - Hora Início</span>
                   <input
                     type="time"
                     value={hora2Inicio}
@@ -1032,7 +1032,7 @@ export function App() {
               </div>
               <div className="form-row">
                 <label>
-                  02 - Hora fim
+                  <span>02 - Hora fim</span>
                   <input
                     type="time"
                     value={hora2Fim}
@@ -1051,7 +1051,7 @@ export function App() {
               </h3>
               <div className="form-row">
                 <label>
-                  03 - Hora Início
+                  <span>03 - Hora Início</span>
                   <input
                     type="time"
                     value={hora3Inicio}
@@ -1061,7 +1061,7 @@ export function App() {
               </div>
               <div className="form-row">
                 <label>
-                  03 - Hora fim
+                  <span>03 - Hora fim</span>
                   <input
                     type="time"
                     value={hora3Fim}
@@ -1075,21 +1075,21 @@ export function App() {
               <h3 className="section-title">Intervalo, acesso e localização</h3>
               <div className="form-row">
                 <label>
-                  Tipo de Intervalo
+                  <span>Tipo de Intervalo</span>
                   <input
                     value={tipoIntervalo}
                     onChange={(e) => setTipoIntervalo(e.target.value)}
                   />
                 </label>
                 <label>
-                  Tipo de Acesso
+                  <span>Tipo de Acesso</span>
                   <input
                     value={tipoAcesso}
                     onChange={(e) => setTipoAcesso(e.target.value)}
                   />
                 </label>
                 <label>
-                  Pá
+                  <span>Pá</span>
                   <input
                     value={pa}
                     onChange={(e) => setPa(e.target.value)}
@@ -1099,21 +1099,21 @@ export function App() {
 
               <div className="form-row">
                 <label>
-                  WTG (Torre)
+                  <span>WTG (Torre)</span>
                   <input
                     value={torreMedicao}
                     onChange={(e) => setTorreMedicao(e.target.value)}
                   />
                 </label>
                 <label>
-                  Plataforma
+                  <span>Plataforma</span>
                   <input
                     value={plataforma}
                     onChange={(e) => setPlataforma(e.target.value)}
                   />
                 </label>
                 <label>
-                  Equipe
+                  <span>Equipe</span>
                   <input
                     value={equipe}
                     onChange={(e) => setEquipe(e.target.value)}
@@ -1124,7 +1124,7 @@ export function App() {
               <h3 className="section-title">Dano e processo</h3>
               <div className="form-row">
                 <label>
-                  Tipo de Dano
+                  <span>Tipo de Dano</span>
                   <select
                     value={tipoDano}
                     onChange={(e) => setTipoDano(e.target.value)}
@@ -1192,7 +1192,7 @@ export function App() {
 
               <div className="form-row">
                 <label>
-                  Dano (código)
+                  <span>Dano (código)</span>
                   <select
                     value={danoCodigo}
                     onChange={(e) => setDanoCodigo(e.target.value)}
@@ -1214,7 +1214,7 @@ export function App() {
 
               <div className="form-row">
                 <label>
-                  Largura do dano (mm)
+                  <span>Largura do dano (mm)</span>
                   <input
                     type="number"
                     value={larguraDano}
@@ -1225,7 +1225,7 @@ export function App() {
 
               <div className="form-row">
                 <label>
-                  Comprimento do dano (mm)
+                  <span>Comprimento do dano (mm)</span>
                   <input
                     type="number"
                     value={comprimentoDano}
@@ -1236,7 +1236,7 @@ export function App() {
 
               <div className="form-row">
                 <label>
-                  Etapa do Processo
+                  <span>Etapa do Processo</span>
                   <select
                     value={etapaProcesso}
                     onChange={(e) => setEtapaProcesso(e.target.value)}
@@ -1482,19 +1482,12 @@ export function App() {
 
               <div className="form-row">
                 <label>
-                  É retrabalho?
+                  <span>É retrabalho?</span>
                   <select
                     value={retrabalho}
                     onChange={(e) =>
                       setRetrabalho(e.target.value as "Sim" | "Não" | "")
                     }
-                    style={{
-                      padding: 8,
-                      borderRadius: 8,
-                      border: "1px solid #374151",
-                      background: "#020617",
-                      color: "#e5e7eb",
-                    }}
                   >
                     <option value="">Selecione</option>
                     <option value="Sim">Sim</option>
@@ -1504,9 +1497,10 @@ export function App() {
               </div>
 
           {/* Bloco final para envio da medição / consumo de material */}
+          <hr style={{ borderColor: "#e5e7eb", margin: "24px 0", borderWidth: "1px" }} />
           <div className="form-row">
             <label>
-              Nº do item (código do estoque)
+              <span>Nº do item (código do estoque) *</span>
               <input
                 value={codigoItemMedicao}
                 onChange={(e) => setCodigoItemMedicao(e.target.value)}
@@ -1514,7 +1508,7 @@ export function App() {
               />
             </label>
             <label>
-              Quantidade consumida (sai do estoque)
+              <span>Quantidade consumida (sai do estoque) *</span>
               <input
                 type="number"
                 step="0.01"
@@ -1526,7 +1520,22 @@ export function App() {
             </label>
           </div>
 
-          <button type="submit" className="primary-button">
+          <button 
+            type="submit" 
+            className="primary-button"
+            style={{
+              padding: "12px 24px",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "1rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+              marginTop: "8px",
+            }}
+          >
             Registrar medição
           </button>
             </>

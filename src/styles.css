@@ -268,4 +268,58 @@ select:focus {
   }
 }
 
+/* Estilos para o módulo de materiais em tela cheia */
+.materiais-fullscreen .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.materiais-fullscreen .form-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.materiais-fullscreen .form-row label span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.materiais-fullscreen .form-row input,
+.materiais-fullscreen .form-row select {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.875rem;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.materiais-fullscreen .form-row input:focus,
+.materiais-fullscreen .form-row select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.materiais-fullscreen .section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 16px;
+  margin-top: 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.materiais-fullscreen .card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 16px;
+}
+
 
