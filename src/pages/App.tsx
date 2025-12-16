@@ -517,6 +517,7 @@ export function App() {
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
               gap: 16,
+              alignItems: "stretch",
             }}
           >
             {/* Passagens à esquerda */}
@@ -525,11 +526,14 @@ export function App() {
               className="primary-button"
               style={{
                 width: "100%",
+                height: "100%",
+                minHeight: "180px",
                 padding: "18px 20px",
                 borderRadius: 20,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: 6,
                 fontSize: 16,
               }}
@@ -548,11 +552,14 @@ export function App() {
               className="primary-button"
               style={{
                 width: "100%",
+                height: "100%",
+                minHeight: "180px",
                 padding: "18px 20px",
                 borderRadius: 20,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: 6,
                 fontSize: 16,
               }}
@@ -572,11 +579,14 @@ export function App() {
               className="primary-button"
               style={{
                 width: "100%",
+                height: "100%",
+                minHeight: "180px",
                 padding: "18px 20px",
                 borderRadius: 20,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: 6,
                 fontSize: 16,
                 opacity: 0.4,
