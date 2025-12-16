@@ -38,7 +38,7 @@ type MedicaoGrid = {
 
 // Backend principal do portal roda na porta 4001 (para não conflitar com o servidor de passagens).
 // Usa variável de ambiente se disponível, senão usa localhost
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4001";
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || "http://localhost:4001";
 
 export function App() {
   const [materiais, setMateriais] = useState<Material[]>([]);
@@ -454,14 +454,47 @@ export function App() {
     try {
       setErro(null);
       setLoading(true);
-      console.log("Enviando", itens.length, "itens para o backend...");
-      const response = await axios.post(`${API_BASE_URL}/materiais/import`, { itens });
-      console.log("Resposta do backend:", response.data);
-      setMensagemImportacao(
-        `Importação concluída. ${response.data?.quantidadeImportada || itens.length} material(is) processado(s) com sucesso.`,
-      );
-      setTextoImportacao("");
-      await carregarMateriais();
+      
+      // Processar em lotes de 500 itens para evitar erro de payload muito grande
+      const tamanhoLote = 500;
+      const lotes = [];
+      for (let i = 0; i < itens.length; i += tamanhoLote) {
+        lotes.push(itens.slice(i, i + tamanhoLote));
+      }
+      
+      console.log(`Enviando ${itens.length} itens em ${lotes.length} lote(s) de até ${tamanhoLote} itens cada...`);
+      
+      let totalImportado = 0;
+      const errosLotes = [];
+      
+      for (let i = 0; i < lotes.length; i++) {
+        const lote = lotes[i];
+        console.log(`Processando lote ${i + 1}/${lotes.length} (${lote.length} itens)...`);
+        
+        try {
+          const response = await axios.post(`${API_BASE_URL}/materiais/import`, { itens: lote });
+          const quantidadeImportada = response.data?.quantidadeImportada || lote.length;
+          totalImportado += quantidadeImportada;
+          console.log(`Lote ${i + 1} processado: ${quantidadeImportada} itens`);
+        } catch (e: any) {
+          console.error(`Erro no lote ${i + 1}:`, e.response?.data || e.message);
+          errosLotes.push(`Lote ${i + 1}: ${e.response?.data?.error || e.message}`);
+        }
+      }
+      
+      if (totalImportado > 0) {
+        setMensagemImportacao(
+          `Importação concluída! ${totalImportado} de ${itens.length} material(is) importado(s) com sucesso.${errosLotes.length > 0 ? ` (${errosLotes.length} lote(s) com erro)` : ""}`
+        );
+        setTextoImportacao("");
+        await carregarMateriais();
+      } else {
+        throw new Error("Nenhum item foi importado. Verifique os erros acima.");
+      }
+      
+      if (errosLotes.length > 0) {
+        console.warn("Erros em alguns lotes:", errosLotes);
+      }
     } catch (e: any) {
       console.error("Erro completo:", e);
       console.error("Resposta do erro:", e.response?.data);
