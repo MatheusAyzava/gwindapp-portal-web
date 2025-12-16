@@ -257,4 +257,15 @@ select:focus {
   }
 }
 
+/* Estilos para o iframe de passagens em tela cheia - garantir sidebar visível no desktop */
+@media (min-width: 769px) {
+  .passagens-fullscreen .passagens-container {
+    min-width: 1048px; /* 280px (sidebar) + 768px (conteúdo mínimo) */
+  }
+  
+  .passagens-fullscreen iframe[title="Sistema de Passagens Aéreas"] {
+    min-width: 1048px; /* 280px (sidebar) + 768px (conteúdo mínimo) */
+  }
+}
+
 

@@ -352,8 +352,9 @@ export function App() {
   // sem mostrar o cabeçalho nem o conteúdo do portal.
   if (modulo === "passagens") {
     return (
-      <div className="app-shell" style={{ padding: 0 }}>
+      <div className="app-shell passagens-fullscreen" style={{ padding: 0, overflow: "hidden" }}>
         <div
+          className="passagens-container"
           style={{
             width: "100%",
             minHeight: "100vh",
@@ -378,6 +379,7 @@ export function App() {
               color: "#374151",
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
               zIndex: 1,
+              position: "relative",
             }}
           >
             ← Voltar ao portal
