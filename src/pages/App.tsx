@@ -444,9 +444,12 @@ export function App() {
     });
 
     if (itens.length === 0) {
-      setErro("Nenhum item válido encontrado. Verifique se copiou as colunas corretas: Nº do item, Descrição do item, Unidade de medida, Em estoque");
+      setErro("Nenhum item válido encontrado. Verifique se copiou as colunas corretas incluindo o cabeçalho. Os códigos podem ser numéricos (ex: 1231) ou alfanuméricos (ex: E00128).");
       return;
     }
+    
+    console.log("Itens processados:", itens.length);
+    console.log("Primeiros 3 itens:", itens.slice(0, 3));
 
     try {
       setErro(null);
