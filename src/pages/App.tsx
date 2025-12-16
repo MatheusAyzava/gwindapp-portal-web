@@ -121,7 +121,7 @@ export function App() {
 
   const qtdEventosNumero =
     !qtdEventos || qtdEventos === "Nenhuma" ? 0 : Number(qtdEventos);
-  const [mostrarCamposAvancados, setMostrarCamposAvancados] = useState(false);
+  // Estado removido - todos os campos são exibidos por padrão
 
   useEffect(() => {
     carregarMateriais();
@@ -878,20 +878,7 @@ export function App() {
             </div>
           </div>
 
-          {!mostrarCamposAvancados && (
-            <button
-              type="button"
-              className="primary-button"
-              style={{ marginTop: 8 }}
-              onClick={() => setMostrarCamposAvancados(true)}
-            >
-              Ver mais campos (igual ao Smartsheet)
-            </button>
-          )}
-
-          {mostrarCamposAvancados && (
-            <>
-              <hr style={{ borderColor: "#e5e7eb", margin: "24px 0", borderWidth: "1px" }} />
+          <hr style={{ borderColor: "#e5e7eb", margin: "24px 0", borderWidth: "1px" }} />
 
           <div>
             <h3 className="section-title" style={{ 
@@ -1538,8 +1525,6 @@ export function App() {
           >
             Registrar medição
           </button>
-            </>
-          )}
         </form>
       </section>
         </>
