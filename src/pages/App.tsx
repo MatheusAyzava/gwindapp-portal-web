@@ -316,6 +316,7 @@ export function App() {
     e.preventDefault();
 
     if (!textoImportacao.trim()) {
+      setErro("Por favor, cole os dados do Excel.");
       return;
     }
 
@@ -324,66 +325,111 @@ export function App() {
       .map((l) => l.trim())
       .filter((l) => l.length > 0);
 
-    const itens = linhas.map((linha, index) => {
-      // aceita tanto tab quanto ponto e vírgula como separador
-      const partes = linha.split(/[\t;]+/).map(p => p.trim());
+    if (linhas.length === 0) {
+      setErro("Nenhuma linha encontrada. Verifique se copiou os dados corretamente.");
+      return;
+    }
+
+    // Detecta índices das colunas na primeira linha (cabeçalho)
+    const primeiraLinha = linhas[0];
+    const partesPrimeira = primeiraLinha.split(/[\t;]+/).map(p => p.trim());
+    
+    let codigoIndex = -1;
+    let descIndex = -1;
+    let unidIndex = -1;
+    let estoqueIndex = -1;
+    
+    // Procura pelos nomes das colunas no cabeçalho
+    partesPrimeira.forEach((parte, i) => {
+      const parteLower = parte.toLowerCase();
+      if ((parteLower.includes("nº") || parteLower.includes("numero") || parteLower.includes("n°")) && 
+          (parteLower.includes("item") || parteLower.includes("código") || parteLower.includes("codigo"))) {
+        codigoIndex = i;
+      }
+      if (parteLower.includes("descrição") || parteLower.includes("descricao")) {
+        if (parteLower.includes("item") && !parteLower.includes("nº") && !parteLower.includes("numero")) {
+          descIndex = i;
+        }
+      }
+      if (parteLower.includes("unidade") || parteLower.includes("medida")) {
+        unidIndex = i;
+      }
+      if (parteLower.includes("estoque") && (parteLower.includes("em") || parteLower.includes("disponível") || parteLower.includes("disponivel"))) {
+        estoqueIndex = i;
+      }
+    });
+    
+    // Se não encontrou no cabeçalho, procura por padrão de código nas linhas de dados
+    if (codigoIndex === -1 && linhas.length > 1) {
+      // Procura na segunda linha por padrão de código (ex: E00128, M00001)
+      const segundaLinha = linhas[1];
+      const partesSegunda = segundaLinha.split(/[\t;]+/).map(p => p.trim());
+      partesSegunda.forEach((parte, i) => {
+        if (parte.match(/^[A-Z]\d+/) && codigoIndex === -1) {
+          codigoIndex = i;
+          // Assume ordem: código, descrição, unidade, estoque
+          descIndex = i + 1 < partesSegunda.length ? i + 1 : -1;
+          unidIndex = i + 2 < partesSegunda.length ? i + 2 : -1;
+          estoqueIndex = i + 3 < partesSegunda.length ? i + 3 : -1;
+        }
+      });
+    }
+    
+    // Se ainda não encontrou, tenta ordem padrão baseada no Excel mostrado
+    // Excel tem: Código do Estoque | Descrição do E | Nº do item | Descrição do item | Unidade | Em estoque
+    if (codigoIndex === -1) {
+      // Procura por "Nº do item" que geralmente está na coluna C (índice 2)
+      partesPrimeira.forEach((parte, i) => {
+        const parteLower = parte.toLowerCase();
+        if (parteLower.includes("nº") && parteLower.includes("item")) {
+          codigoIndex = i;
+        }
+      });
       
-      // Tenta identificar as colunas automaticamente
-      // Formato esperado: Nº do item | Descrição | Unidade | Em estoque
-      // Pode ter colunas extras antes (Código do Estoque, Descrição do E, etc.)
-      
-      // Procura por padrão de código (ex: M00001, E00128, F00064)
-      let codigoIndex = -1;
-      let descIndex = -1;
-      let unidIndex = -1;
-      let estoqueIndex = -1;
-      
-      // Se for a primeira linha (cabeçalho), tenta identificar as colunas
-      if (index === 0 && linhas.length > 1) {
-        partes.forEach((parte, i) => {
-          const parteLower = parte.toLowerCase();
-          if (parteLower.includes("nº") || parteLower.includes("numero") || parteLower.includes("código") || parteLower.includes("codigo")) {
-            codigoIndex = i;
-          }
-          if (parteLower.includes("descrição") || parteLower.includes("descricao") || parteLower.includes("item")) {
-            if (!parteLower.includes("nº") && !parteLower.includes("numero")) {
-              descIndex = i;
-            }
-          }
-          if (parteLower.includes("unidade") || parteLower.includes("medida")) {
+      // Se encontrou "Nº do item", assume que a próxima é "Descrição do item"
+      if (codigoIndex !== -1) {
+        descIndex = codigoIndex + 1;
+        // Procura "Unidade" depois
+        partesPrimeira.forEach((parte, i) => {
+          if (i > codigoIndex && parte.toLowerCase().includes("unidade")) {
             unidIndex = i;
           }
-          if (parteLower.includes("estoque") || parteLower.includes("em estoque") || parteLower.includes("disponível") || parteLower.includes("disponivel")) {
+        });
+        // Procura "Em estoque" depois
+        partesPrimeira.forEach((parte, i) => {
+          if (i > codigoIndex && parte.toLowerCase().includes("estoque")) {
             estoqueIndex = i;
           }
         });
       }
-      
-      // Se não encontrou cabeçalho, assume ordem padrão: código, descrição, unidade, estoque
-      if (codigoIndex === -1) {
-        codigoIndex = 0;
-        descIndex = 1;
-        unidIndex = 2;
-        estoqueIndex = 3;
+    }
+
+    if (codigoIndex === -1) {
+      setErro("Não foi possível identificar a coluna 'Nº do item'. Certifique-se de copiar as colunas: Nº do item, Descrição do item, Unidade de medida, Em estoque");
+      return;
+    }
+
+    // Processa as linhas (pula o cabeçalho se for texto)
+    const linhasDados = linhas.filter((linha, index) => {
+      if (index === 0) {
+        // Verifica se a primeira linha é cabeçalho (não tem código)
+        const partes = linha.split(/[\t;]+/).map(p => p.trim());
+        return !partes[codigoIndex]?.match(/^[A-Z]\d+/);
       }
+      return true;
+    });
+
+    const itens = linhasDados.map((linha) => {
+      const partes = linha.split(/[\t;]+/).map(p => p.trim());
       
-      // Se ainda não encontrou, tenta detectar pelo padrão do código
-      if (codigoIndex === -1 || !partes[codigoIndex]?.match(/^[A-Z]\d+/)) {
-        // Procura por padrão de código em qualquer coluna
-        partes.forEach((parte, i) => {
-          if (parte.match(/^[A-Z]\d+/) && codigoIndex === -1) {
-            codigoIndex = i;
-          }
-        });
-      }
-      
-      const codigo = partes[codigoIndex] || partes[0] || "";
-      const desc = partes[descIndex] || partes[1] || "";
-      const unid = partes[unidIndex] || partes[2] || "KG";
-      const estoqueStr = partes[estoqueIndex] || partes[3] || "0";
+      const codigo = partes[codigoIndex] || "";
+      const desc = partes[descIndex] || "";
+      const unid = partes[unidIndex] || "KG";
+      const estoqueStr = partes[estoqueIndex] || "0";
       
       // Limpa o valor do estoque (remove pontos de milhar, converte vírgula para ponto)
       const estoqueLimpo = estoqueStr
+        .toString()
         .replace(/\./g, "") // Remove pontos de milhar
         .replace(",", ".") // Converte vírgula para ponto decimal
         .replace(/[^\d.-]/g, ""); // Remove caracteres não numéricos exceto ponto e menos
@@ -394,24 +440,30 @@ export function App() {
         unidade: unid || "KG",
         estoqueInicial: estoqueLimpo ? Number(estoqueLimpo) : 0,
       };
-    }).filter(item => item.codigoItem && item.descricao); // Remove linhas inválidas
+    }).filter(item => {
+      // Filtra apenas itens válidos (com código no formato esperado)
+      return item.codigoItem && 
+             item.codigoItem.match(/^[A-Z]\d+/) && 
+             item.descricao && 
+             item.descricao.length > 0;
+    });
 
     if (itens.length === 0) {
-      setErro("Nenhum item válido encontrado. Verifique o formato dos dados.");
+      setErro("Nenhum item válido encontrado. Verifique se copiou as colunas corretas: Nº do item, Descrição do item, Unidade de medida, Em estoque");
       return;
     }
 
     try {
+      setErro(null);
       await axios.post(`${API_BASE_URL}/materiais/import`, { itens });
       setMensagemImportacao(
         `Importação concluída. ${itens.length} material(is) processado(s) com sucesso.`,
       );
       setTextoImportacao("");
-      setErro(null);
       await carregarMateriais();
     } catch (e: any) {
       console.error(e);
-      setErro(e.response?.data?.error || "Erro ao importar materiais.");
+      setErro(e.response?.data?.error || "Erro ao importar materiais. Verifique o formato dos dados.");
     }
   }
 
@@ -755,6 +807,127 @@ export function App() {
 
       {aba === "materiais" && (
         <>
+      {/* Dashboard de Estoque */}
+      <section className="card">
+        <h2 style={{ marginBottom: "20px" }}>Dashboard de Estoque</h2>
+        {materiais.length === 0 ? (
+          <p style={{ color: "#6b7280", textAlign: "center", padding: "40px" }}>
+            Nenhum material cadastrado. Importe os materiais do Excel para ver o dashboard.
+          </p>
+        ) : (
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", 
+            gap: "16px",
+            marginBottom: "24px"
+          }}>
+            {materiais
+              .filter(m => 
+                !buscaEstoque || 
+                m.codigoItem.toLowerCase().includes(buscaEstoque.toLowerCase()) ||
+                m.descricao.toLowerCase().includes(buscaEstoque.toLowerCase())
+              )
+              .map((m) => {
+                const percentual = m.estoqueInicial > 0 
+                  ? (m.estoqueAtual / m.estoqueInicial) * 100 
+                  : 0;
+                const statusCor = percentual > 50 ? "#10b981" : percentual > 20 ? "#f59e0b" : "#ef4444";
+                const statusTexto = percentual > 50 ? "Bom" : percentual > 20 ? "Atenção" : "Crítico";
+                
+                return (
+                  <div 
+                    key={m.id}
+                    style={{
+                      background: "#ffffff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "12px",
+                      padding: "16px",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    <div style={{ marginBottom: "12px" }}>
+                      <div style={{ 
+                        fontSize: "0.75rem", 
+                        fontWeight: 600, 
+                        color: "#6b7280",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                        marginBottom: "4px"
+                      }}>
+                        {m.codigoItem}
+                      </div>
+                      <div style={{ 
+                        fontSize: "0.875rem", 
+                        color: "#374151",
+                        fontWeight: 500,
+                        lineHeight: "1.4",
+                        marginBottom: "8px"
+                      }}>
+                        {m.descricao.length > 50 ? m.descricao.substring(0, 50) + "..." : m.descricao}
+                      </div>
+                    </div>
+                    
+                    <div style={{ marginBottom: "12px" }}>
+                      <div style={{ 
+                        display: "flex", 
+                        justifyContent: "space-between", 
+                        alignItems: "center",
+                        marginBottom: "6px"
+                      }}>
+                        <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>Estoque atual</span>
+                        <span style={{ 
+                          fontSize: "1rem", 
+                          fontWeight: 700, 
+                          color: m.estoqueAtual < 0 ? "#ef4444" : "#1f2937"
+                        }}>
+                          {m.estoqueAtual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {m.unidade}
+                        </span>
+                      </div>
+                      
+                      {/* Barra de progresso */}
+                      <div style={{
+                        width: "100%",
+                        height: "8px",
+                        background: "#e5e7eb",
+                        borderRadius: "4px",
+                        overflow: "hidden",
+                        marginBottom: "6px"
+                      }}>
+                        <div style={{
+                          width: `${Math.min(percentual, 100)}%`,
+                          height: "100%",
+                          background: statusCor,
+                          transition: "width 0.3s ease"
+                        }} />
+                      </div>
+                      
+                      <div style={{ 
+                        display: "flex", 
+                        justifyContent: "space-between", 
+                        alignItems: "center"
+                      }}>
+                        <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>
+                          {m.estoqueInicial.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {m.unidade} inicial
+                        </span>
+                        <span style={{
+                          padding: "2px 8px",
+                          borderRadius: "4px",
+                          fontSize: "0.7rem",
+                          fontWeight: 600,
+                          background: `${statusCor}20`,
+                          color: statusCor,
+                        }}>
+                          {statusTexto} ({percentual.toFixed(0)}%)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </section>
+
       <section className="card">
         <h2>Cadastrar / Atualizar Material</h2>
         <form className="form" onSubmit={salvarMaterial}>
@@ -995,18 +1168,45 @@ export function App() {
             <div className="form-row" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Nº do item (código do estoque) *</span>
-                <input
+                <select
                   value={codigoItemMedicao}
-                  onChange={(e) => setCodigoItemMedicao(e.target.value)}
+                  onChange={(e) => {
+                    setCodigoItemMedicao(e.target.value);
+                    // Mostra o estoque atual quando seleciona um item
+                    const materialSelecionado = materiais.find(m => m.codigoItem === e.target.value);
+                    if (materialSelecionado) {
+                      // Pode mostrar uma mensagem ou atualizar algum estado
+                    }
+                  }}
                   required
-                  placeholder="Ex: M00001, E00128"
                   style={{
                     padding: "12px",
                     borderRadius: "8px",
                     border: "1px solid #d1d5db",
                     fontSize: "0.875rem",
+                    background: "#ffffff",
+                    color: "#1f2937",
                   }}
-                />
+                >
+                  <option value="">Selecione um material...</option>
+                  {materiais.map((m) => (
+                    <option key={m.id} value={m.codigoItem}>
+                      {m.codigoItem} - {m.descricao} (Estoque: {m.estoqueAtual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {m.unidade})
+                    </option>
+                  ))}
+                </select>
+                {codigoItemMedicao && materiais.find(m => m.codigoItem === codigoItemMedicao) && (
+                  <div style={{ 
+                    padding: "8px 12px", 
+                    background: "#f0f9ff", 
+                    borderRadius: "6px", 
+                    fontSize: "0.875rem",
+                    color: "#0369a1",
+                    marginTop: "4px"
+                  }}>
+                    Estoque disponível: <strong>{materiais.find(m => m.codigoItem === codigoItemMedicao)?.estoqueAtual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {materiais.find(m => m.codigoItem === codigoItemMedicao)?.unidade}</strong>
+                  </div>
+                )}
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Quantidade consumida (sai do estoque) *</span>
