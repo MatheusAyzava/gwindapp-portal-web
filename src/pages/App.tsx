@@ -8,6 +8,16 @@ type Material = {
   unidade: string;
   estoqueInicial: number;
   estoqueAtual: number;
+  codigoEstoque?: string | null;
+  descricaoEstoque?: string | null;
+  confirmado?: number | null;
+  pedido?: number | null;
+  disponivel?: number | null;
+  precoItem?: number | null;
+  total?: number | null;
+  codigoProjeto?: string | null;
+  descricaoProjeto?: string | null;
+  centroCustos?: string | null;
 };
 
 type MedicaoGrid = {
@@ -51,6 +61,7 @@ export function App() {
   const [mensagemImportacao, setMensagemImportacao] = useState<string | null>(
     null,
   );
+  const [arquivoExcel, setArquivoExcel] = useState<File | null>(null);
 
   // Formulário completo (parecido com Smartsheet)
   const [dia, setDia] = useState("");
@@ -96,6 +107,7 @@ export function App() {
   const [massaValidade, setMassaValidade] = useState("");
 
   const [nucleoTipo, setNucleoTipo] = useState("");
+  const [nucleoTipoNucleo, setNucleoTipoNucleo] = useState(""); // Tipo do núcleo: Rígida ou Flexível
   const [nucleoEspessura, setNucleoEspessura] = useState("");
 
   const [puTipo, setPuTipo] = useState("");
@@ -334,75 +346,35 @@ export function App() {
     const primeiraLinha = linhas[0];
     const partesPrimeira = primeiraLinha.split(/[\t;]+/).map(p => p.trim());
     
-    let codigoIndex = -1;
-    let descIndex = -1;
-    let unidIndex = -1;
-    let estoqueIndex = -1;
+    // Função auxiliar para encontrar índice de coluna
+    const encontrarIndice = (palavras: string[]): number => {
+      for (const palavra of palavras) {
+        const idx = partesPrimeira.findIndex((p: string) => 
+          p.toLowerCase().includes(palavra.toLowerCase())
+        );
+        if (idx !== -1) return idx;
+      }
+      return -1;
+    };
     
-    // Procura pelos nomes das colunas no cabeçalho
-    partesPrimeira.forEach((parte, i) => {
-      const parteLower = parte.toLowerCase();
-      if ((parteLower.includes("nº") || parteLower.includes("numero") || parteLower.includes("n°")) && 
-          (parteLower.includes("item") || parteLower.includes("código") || parteLower.includes("codigo"))) {
-        codigoIndex = i;
-      }
-      if (parteLower.includes("descrição") || parteLower.includes("descricao")) {
-        if (parteLower.includes("item") && !parteLower.includes("nº") && !parteLower.includes("numero")) {
-          descIndex = i;
-        }
-      }
-      if (parteLower.includes("unidade") || parteLower.includes("medida")) {
-        unidIndex = i;
-      }
-      if (parteLower.includes("estoque") && (parteLower.includes("em") || parteLower.includes("disponível") || parteLower.includes("disponivel"))) {
-        estoqueIndex = i;
-      }
-    });
+    // Mapear todas as colunas
+    const codigoEstoqueIndex = encontrarIndice(["código do estoque", "codigo do estoque", "código estoque", "codigo estoque"]);
+    const descricaoEstoqueIndex = encontrarIndice(["descrição do e", "descricao do e", "descrição estoque", "descricao estoque"]);
+    const codigoIndex = encontrarIndice(["nº do item", "numero do item", "número do item", "nº item", "numero item", "número item", "codigo", "código", "item"]);
+    const descIndex = encontrarIndice(["descrição do item", "descricao do item", "descrição item", "descricao item", "descrição", "descricao", "desc"]);
+    const unidIndex = encontrarIndice(["unidade de medida", "unidade medida", "unidade", "medida", "um"]);
+    const estoqueIndex = encontrarIndice(["em estoque", "estoque", "disponível", "disponivel", "quantidade"]);
+    const confirmadoIndex = encontrarIndice(["confirmado"]);
+    const pedidoIndex = encontrarIndice(["pedido"]);
+    const disponivelIndex = encontrarIndice(["disponível", "disponivel"]);
+    const precoItemIndex = encontrarIndice(["preço do item", "preco do item", "preço item", "preco item", "preço", "preco", "valor"]);
+    const totalIndex = encontrarIndice(["total"]);
+    const codigoProjetoIndex = encontrarIndice(["cód. projeto", "cod. projeto", "codigo projeto", "código projeto", "projeto"]);
+    const descricaoProjetoIndex = encontrarIndice(["desc. projeto", "desc projeto", "descrição projeto", "descricao projeto"]);
+    const centroCustosIndex = encontrarIndice(["centro de custos", "centro custos", "dimensão 1", "dimensao 1"]);
     
-    // Se não encontrou no cabeçalho, procura por padrão de código nas linhas de dados
-    if (codigoIndex === -1 && linhas.length > 1) {
-      // Procura na segunda linha por padrão de código (ex: E00128, M00001)
-      const segundaLinha = linhas[1];
-      const partesSegunda = segundaLinha.split(/[\t;]+/).map(p => p.trim());
-      partesSegunda.forEach((parte, i) => {
-        if (parte.match(/^[A-Z]\d+/) && codigoIndex === -1) {
-          codigoIndex = i;
-          // Assume ordem: código, descrição, unidade, estoque
-          descIndex = i + 1 < partesSegunda.length ? i + 1 : -1;
-          unidIndex = i + 2 < partesSegunda.length ? i + 2 : -1;
-          estoqueIndex = i + 3 < partesSegunda.length ? i + 3 : -1;
-        }
-      });
-    }
-    
-    // Se ainda não encontrou, tenta ordem padrão baseada no Excel mostrado
-    // Excel tem: Código do Estoque | Descrição do E | Nº do item | Descrição do item | Unidade | Em estoque
-    if (codigoIndex === -1) {
-      // Procura por "Nº do item" que geralmente está na coluna C (índice 2)
-      partesPrimeira.forEach((parte, i) => {
-        const parteLower = parte.toLowerCase();
-        if (parteLower.includes("nº") && parteLower.includes("item")) {
-          codigoIndex = i;
-        }
-      });
-      
-      // Se encontrou "Nº do item", assume que a próxima é "Descrição do item"
-      if (codigoIndex !== -1) {
-        descIndex = codigoIndex + 1;
-        // Procura "Unidade" depois
-        partesPrimeira.forEach((parte, i) => {
-          if (i > codigoIndex && parte.toLowerCase().includes("unidade")) {
-            unidIndex = i;
-          }
-        });
-        // Procura "Em estoque" depois
-        partesPrimeira.forEach((parte, i) => {
-          if (i > codigoIndex && parte.toLowerCase().includes("estoque")) {
-            estoqueIndex = i;
-          }
-        });
-      }
-    }
+    // Se não encontrou no cabeçalho, tenta detectar pela estrutura dos dados
+    // (código já foi mapeado acima, então se chegou aqui e codigoIndex === -1, não encontrou)
 
     if (codigoIndex === -1) {
       setErro("Não foi possível identificar a coluna 'Nº do item'. Certifique-se de copiar as colunas: Nº do item, Descrição do item, Unidade de medida, Em estoque");
@@ -419,6 +391,22 @@ export function App() {
       return true;
     });
 
+    // Função auxiliar para converter números
+    const converterNumero = (valor: string | undefined): number | undefined => {
+      if (!valor || valor.trim() === "") return undefined;
+      try {
+        const limpo = valor
+          .toString()
+          .replace(/\./g, "") // Remove pontos de milhar
+          .replace(",", ".") // Converte vírgula para ponto decimal
+          .replace(/[^\d.-]/g, ""); // Remove caracteres não numéricos exceto ponto e menos
+        const num = parseFloat(limpo);
+        return isNaN(num) ? undefined : num;
+      } catch {
+        return undefined;
+      }
+    };
+
     const itens = linhasDados.map((linha) => {
       const partes = linha.split(/[\t;]+/).map(p => p.trim());
       
@@ -427,18 +415,21 @@ export function App() {
       const unid = partes[unidIndex] || "KG";
       const estoqueStr = partes[estoqueIndex] || "0";
       
-      // Limpa o valor do estoque (remove pontos de milhar, converte vírgula para ponto)
-      const estoqueLimpo = estoqueStr
-        .toString()
-        .replace(/\./g, "") // Remove pontos de milhar
-        .replace(",", ".") // Converte vírgula para ponto decimal
-        .replace(/[^\d.-]/g, ""); // Remove caracteres não numéricos exceto ponto e menos
-      
       return {
         codigoItem: codigo,
         descricao: desc,
         unidade: unid || "KG",
-        estoqueInicial: estoqueLimpo ? Number(estoqueLimpo) : 0,
+        estoqueInicial: converterNumero(estoqueStr) || 0,
+        codigoEstoque: codigoEstoqueIndex !== -1 ? partes[codigoEstoqueIndex] : undefined,
+        descricaoEstoque: descricaoEstoqueIndex !== -1 ? partes[descricaoEstoqueIndex] : undefined,
+        confirmado: confirmadoIndex !== -1 ? converterNumero(partes[confirmadoIndex]) : undefined,
+        pedido: pedidoIndex !== -1 ? converterNumero(partes[pedidoIndex]) : undefined,
+        disponivel: disponivelIndex !== -1 ? converterNumero(partes[disponivelIndex]) : undefined,
+        precoItem: precoItemIndex !== -1 ? converterNumero(partes[precoItemIndex]) : undefined,
+        total: totalIndex !== -1 ? converterNumero(partes[totalIndex]) : undefined,
+        codigoProjeto: codigoProjetoIndex !== -1 ? partes[codigoProjetoIndex] : undefined,
+        descricaoProjeto: descricaoProjetoIndex !== -1 ? partes[descricaoProjetoIndex] : undefined,
+        centroCustos: centroCustosIndex !== -1 ? partes[centroCustosIndex] : undefined,
       };
     }).filter(item => {
       // Filtra apenas itens válidos (com código no formato esperado)
@@ -464,6 +455,56 @@ export function App() {
     } catch (e: any) {
       console.error(e);
       setErro(e.response?.data?.error || "Erro ao importar materiais. Verifique o formato dos dados.");
+    }
+  }
+
+  async function importarArquivoExcel(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!arquivoExcel) {
+      setErro("Por favor, selecione um arquivo Excel (.xlsx ou .xls).");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("arquivo", arquivoExcel);
+
+    try {
+      setErro(null);
+      setMensagemImportacao(null);
+      setLoading(true);
+      
+      const response = await axios.post(
+        `${API_BASE_URL}/materiais/import-excel`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      const { quantidadeImportada, erros } = response.data;
+      
+      setMensagemImportacao(
+        `Importação concluída! ${quantidadeImportada} material(is) importado(s) com sucesso.${erros && erros.length > 0 ? ` (${erros.length} erro(s) ignorado(s))` : ""}`
+      );
+      
+      if (erros && erros.length > 0) {
+        console.warn("Erros durante importação:", erros);
+      }
+      
+      setArquivoExcel(null);
+      await carregarMateriais();
+    } catch (e: any) {
+      console.error(e);
+      setErro(
+        e.response?.data?.error || 
+        e.response?.data?.detalhes || 
+        "Erro ao importar arquivo Excel. Verifique se o arquivo está no formato correto."
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -807,6 +848,127 @@ export function App() {
 
       {aba === "materiais" && (
         <>
+      {/* Importação em massa - PRIMEIRO, mais visível */}
+      <section className="card" style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)", border: "2px solid #667eea" }}>
+        <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#1e40af", marginBottom: "8px" }}>
+          ⚡ Importar Todos os Materiais de Uma Vez
+        </h2>
+        <p style={{ fontSize: 14, color: "#1e40af", marginBottom: 24, fontWeight: 500 }}>
+          Importe todos os materiais da planilha Excel de uma só vez! O sistema identifica automaticamente todas as colunas.
+        </p>
+        
+        {/* Opção principal: colar dados (mais simples) */}
+        <div style={{ marginBottom: "32px" }}>
+          <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "8px", color: "#1f2937" }}>
+            📋 Método Rápido: Cole a planilha do Excel
+          </h3>
+          <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "12px" }}>
+            Abra o Excel, selecione TODAS as colunas (incluindo o cabeçalho) e cole aqui. É mais rápido!
+          </p>
+          <form onSubmit={importarMateriais}>
+            <textarea
+              value={textoImportacao}
+              onChange={(e) => setTextoImportacao(e.target.value)}
+              placeholder="1. Abra o Excel e selecione TODAS as colunas (incluindo cabeçalho)&#10;2. Copie (Ctrl+C)&#10;3. Cole aqui (Ctrl+V)&#10;&#10;O sistema identifica automaticamente: Código do Estoque, Descrição do E, Nº do item, Descrição do item, Unidade, Em estoque, Confirmado, Pedido, Disponível, Preço, Total, Cód. Projeto, Desc. Projeto, Centro de Custos..."
+              style={{
+                width: "100%",
+                minHeight: "200px",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "2px solid #667eea",
+                fontSize: "0.875rem",
+                fontFamily: "monospace",
+                marginBottom: "12px",
+                backgroundColor: "#ffffff",
+              }}
+            />
+            <button type="submit" className="primary-button" style={{
+              padding: "14px 28px",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "1.125rem",
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)",
+            }}>
+              🚀 Importar Todos os Materiais
+            </button>
+          </form>
+        </div>
+
+        {/* Opção alternativa: upload de arquivo */}
+        <div style={{ 
+          borderTop: "2px solid #cbd5e1", 
+          paddingTop: "24px",
+        }}>
+          <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "8px", color: "#374151" }}>
+            📁 Ou faça upload do arquivo Excel (.xlsx ou .xls)
+          </h3>
+          <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "12px" }}>
+            Se preferir, você pode fazer upload do arquivo completo.
+          </p>
+          <form onSubmit={importarArquivoExcel}>
+            <div style={{ marginBottom: "12px" }}>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setArquivoExcel(file);
+                    setErro(null);
+                    setMensagemImportacao(null);
+                  }
+                }}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                }}
+              />
+            </div>
+            {arquivoExcel && (
+              <p style={{ fontSize: "0.875rem", color: "#16a34a", marginBottom: "12px" }}>
+                Arquivo selecionado: <strong>{arquivoExcel.name}</strong>
+              </p>
+            )}
+            <button 
+              type="submit" 
+              className="primary-button" 
+              disabled={!arquivoExcel || loading}
+              style={{
+                padding: "12px 24px",
+                background: arquivoExcel && !loading 
+                  ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" 
+                  : "#9ca3af",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "1rem",
+                fontWeight: 600,
+                cursor: arquivoExcel && !loading ? "pointer" : "not-allowed",
+                boxShadow: arquivoExcel && !loading 
+                  ? "0 4px 12px rgba(102, 126, 234, 0.3)" 
+                  : "none",
+              }}
+            >
+              {loading ? "Importando..." : "Importar do Excel"}
+            </button>
+          </form>
+        </div>
+
+        {mensagemImportacao && (
+          <p style={{ marginTop: 16, fontSize: 14, color: "#16a34a", fontWeight: 500, padding: "12px", backgroundColor: "#f0fdf4", borderRadius: "8px", border: "1px solid #86efac" }}>
+            ✅ {mensagemImportacao}
+          </p>
+        )}
+      </section>
+
       {/* Dashboard de Estoque */}
       <section className="card">
         <h2 style={{ marginBottom: "20px" }}>Dashboard de Estoque</h2>
@@ -1061,48 +1223,6 @@ export function App() {
         )}
       </section>
 
-      <section className="card">
-        <h2>Importar Estoque do Excel</h2>
-        <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>
-          Copie e cole os dados da planilha Excel. O sistema aceita o formato com as colunas:
-          <strong> Nº do item | Descrição do item | Unidade de medida | Em estoque</strong>
-        </p>
-        <form onSubmit={importarMateriais}>
-          <textarea
-            value={textoImportacao}
-            onChange={(e) => setTextoImportacao(e.target.value)}
-            placeholder="Cole aqui os dados do Excel (copie as colunas: Nº do item, Descrição, Unidade, Em estoque)"
-            style={{
-              width: "100%",
-              minHeight: "150px",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #d1d5db",
-              fontSize: "0.875rem",
-              fontFamily: "monospace",
-              marginBottom: "12px",
-            }}
-          />
-          <button type="submit" className="primary-button" style={{
-            padding: "12px 24px",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "#ffffff",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "1rem",
-            fontWeight: 600,
-            cursor: "pointer",
-            boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-          }}>
-            Importar Materiais
-          </button>
-        </form>
-        {mensagemImportacao && (
-          <p style={{ marginTop: 12, fontSize: 14, color: "#16a34a", fontWeight: 500 }}>
-            {mensagemImportacao}
-          </p>
-        )}
-      </section>
 
       <section className="card">
         <h2>Integração com Smartsheet</h2>
@@ -1156,6 +1276,7 @@ export function App() {
         }}>Formulário de Medição</h2>
         <form className="form" onSubmit={registrarMedicao} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           {/* Campos principais no topo */}
+          
           <div>
             <h3 className="section-title" style={{ 
               fontSize: "1rem", 
@@ -1170,14 +1291,7 @@ export function App() {
                 <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Nº do item (código do estoque) *</span>
                 <select
                   value={codigoItemMedicao}
-                  onChange={(e) => {
-                    setCodigoItemMedicao(e.target.value);
-                    // Mostra o estoque atual quando seleciona um item
-                    const materialSelecionado = materiais.find(m => m.codigoItem === e.target.value);
-                    if (materialSelecionado) {
-                      // Pode mostrar uma mensagem ou atualizar algum estado
-                    }
-                  }}
+                  onChange={(e) => setCodigoItemMedicao(e.target.value)}
                   required
                   style={{
                     padding: "12px",
@@ -1186,6 +1300,7 @@ export function App() {
                     fontSize: "0.875rem",
                     background: "#ffffff",
                     color: "#1f2937",
+                    width: "100%",
                   }}
                 >
                   <option value="">Selecione um material...</option>
@@ -1195,18 +1310,6 @@ export function App() {
                     </option>
                   ))}
                 </select>
-                {codigoItemMedicao && materiais.find(m => m.codigoItem === codigoItemMedicao) && (
-                  <div style={{ 
-                    padding: "8px 12px", 
-                    background: "#f0f9ff", 
-                    borderRadius: "6px", 
-                    fontSize: "0.875rem",
-                    color: "#0369a1",
-                    marginTop: "4px"
-                  }}>
-                    Estoque disponível: <strong>{materiais.find(m => m.codigoItem === codigoItemMedicao)?.estoqueAtual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {materiais.find(m => m.codigoItem === codigoItemMedicao)?.unidade}</strong>
-                  </div>
-                )}
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Quantidade consumida (sai do estoque) *</span>
@@ -1217,12 +1320,13 @@ export function App() {
                   value={quantidadeMedida}
                   onChange={(e) => setQuantidadeMedida(e.target.value)}
                   required
-                  placeholder="0.00"
+                  placeholder="0"
                   style={{
                     padding: "12px",
                     borderRadius: "8px",
                     border: "1px solid #d1d5db",
                     fontSize: "0.875rem",
+                    width: "100%",
                   }}
                 />
               </label>
@@ -1681,10 +1785,27 @@ export function App() {
               <div className="form-row">
                 <label>
                   Qual é a resina
-                  <input
+                  <select
                     value={resinaTipo}
                     onChange={(e) => setResinaTipo(e.target.value)}
-                  />
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "0.875rem",
+                      width: "100%",
+                      background: "#ffffff",
+                      color: "#1f2937",
+                    }}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Hexion 635">Hexion 635</option>
+                    <option value="Olin 720">Olin 720</option>
+                    <option value="Sika Biresin">Sika Biresin</option>
+                    <option value="Ampreg 30">Ampreg 30</option>
+                    <option value="Ampreg 31">Ampreg 31</option>
+                    <option value="Prime 37">Prime 37</option>
+                  </select>
                 </label>
                 <label>
                   Quantidade de resina (kg/g)
@@ -1728,10 +1849,24 @@ export function App() {
               <div className="form-row">
                 <label>
                   Massa de colagem
-                  <input
+                  <select
                     value={massaTipo}
                     onChange={(e) => setMassaTipo(e.target.value)}
-                  />
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "0.875rem",
+                      width: "100%",
+                      background: "#ffffff",
+                      color: "#1f2937",
+                    }}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Hexion G3">Hexion G3</option>
+                    <option value="Sika 818">Sika 818</option>
+                    <option value="Sika 800">Sika 800</option>
+                  </select>
                 </label>
                 <label>
                   Quantidade de Massa (kg/g)
@@ -1775,10 +1910,44 @@ export function App() {
               <div className="form-row">
                 <label>
                   Núcleo
-                  <input
+                  <select
                     value={nucleoTipo}
                     onChange={(e) => setNucleoTipo(e.target.value)}
-                  />
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "0.875rem",
+                      width: "100%",
+                      background: "#ffffff",
+                      color: "#1f2937",
+                    }}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Espuma PVC">Espuma PVC</option>
+                    <option value="Espuma PET">Espuma PET</option>
+                    <option value="Madeira Balsa">Madeira Balsa</option>
+                  </select>
+                </label>
+                <label>
+                  Tipo do núcleo
+                  <select
+                    value={nucleoTipoNucleo}
+                    onChange={(e) => setNucleoTipoNucleo(e.target.value)}
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "0.875rem",
+                      width: "100%",
+                      background: "#ffffff",
+                      color: "#1f2937",
+                    }}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Rígida">Rígida</option>
+                    <option value="Flexível">Flexível</option>
+                  </select>
                 </label>
                 <label>
                   Espessura do Núcleo (mm)
@@ -1797,10 +1966,24 @@ export function App() {
               <div className="form-row">
                 <label>
                   Massa PU (Filler)
-                  <input
+                  <select
                     value={puTipo}
                     onChange={(e) => setPuTipo(e.target.value)}
-                  />
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "0.875rem",
+                      width: "100%",
+                      background: "#ffffff",
+                      color: "#1f2937",
+                    }}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Mankiewicz">Mankiewicz</option>
+                    <option value="Weg">Weg</option>
+                    <option value="Sika">Sika</option>
+                  </select>
                 </label>
                 <label>
                   Peso da massa PU
@@ -1845,10 +2028,23 @@ export function App() {
               <div className="form-row">
                 <label>
                   Gel
-                  <input
+                  <select
                     value={gelTipo}
                     onChange={(e) => setGelTipo(e.target.value)}
-                  />
+                    style={{
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "0.875rem",
+                      width: "100%",
+                      background: "#ffffff",
+                      color: "#1f2937",
+                    }}
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="Mankevicz">Mankevicz</option>
+                    <option value="Weg">Weg</option>
+                  </select>
                 </label>
                 <label>
                   Peso do gel
