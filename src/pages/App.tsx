@@ -348,7 +348,7 @@ export function App() {
     }
   }
 
-  // Quando o módulo selecionado é "passagens", renderiza o sistema de passagens em tela cheia,
+  // Quando o módulo selecionado é "passagens" ou "materiais", renderiza em tela cheia,
   // sem mostrar o cabeçalho nem o conteúdo do portal.
   if (modulo === "passagens") {
     return (
@@ -594,57 +594,87 @@ export function App() {
       )}
 
       {modulo === "materiais" && (
-        <>
-      <header className="materials-header" style={{ marginTop: 8 }}>
-        <h1>Controle de Materiais</h1>
-        <p>Módulo web – apontamento e controle de materiais.</p>
-        <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button
-            type="button"
-            className="primary-button"
+        <div className="app-shell materiais-fullscreen" style={{ padding: 0, overflow: "auto", background: "#f5f7fa" }}>
+          <div
+            className="materiais-container"
             style={{
-              background: "transparent",
-              color: "#374151",
-              border: "1px solid #d1d5db",
+              width: "100%",
+              minHeight: "100vh",
+              background: "#f5f7fa",
+              display: "flex",
+              flexDirection: "column",
             }}
-            onClick={() => setModulo("home")}
           >
-            Voltar para o portal
-          </button>
-          <button
-            type="button"
-            className="primary-button"
-            style={
-              aba === "apontamento"
-                ? {}
-                : {
-                    background: "transparent",
-                    color: "#374151",
+            <div style={{ 
+              background: "#ffffff", 
+              borderBottom: "1px solid #e5e7eb",
+              padding: "12px 16px",
+              position: "sticky",
+              top: 0,
+              zIndex: 100,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                <div>
+                  <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#1f2937", margin: 0 }}>Controle de Materiais</h1>
+                  <p style={{ fontSize: "0.875rem", color: "#6b7280", margin: "4px 0 0 0" }}>Módulo web – apontamento e controle de materiais.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setModulo("home")}
+                  style={{
+                    padding: "8px 16px",
+                    background: "#ffffff",
                     border: "1px solid #d1d5db",
-                  }
-            }
-            onClick={() => setAba("apontamento")}
-          >
-            Apontamento
-          </button>
-          <button
-            type="button"
-            className="primary-button"
-            style={
-              aba === "materiais"
-                ? {}
-                : {
-                    background: "transparent",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: 500,
                     color: "#374151",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                  }}
+                >
+                  ← Voltar ao portal
+                </button>
+              </div>
+              <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => setAba("apontamento")}
+                  style={{
+                    padding: "8px 16px",
+                    background: aba === "apontamento" ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "transparent",
+                    color: aba === "apontamento" ? "#ffffff" : "#374151",
                     border: "1px solid #d1d5db",
-                  }
-            }
-            onClick={() => setAba("materiais")}
-          >
-            Materiais
-          </button>
-        </div>
-      </header>
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    boxShadow: aba === "apontamento" ? "0 2px 4px rgba(102, 126, 234, 0.3)" : "none",
+                  }}
+                >
+                  Apontamento
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAba("materiais")}
+                  style={{
+                    padding: "8px 16px",
+                    background: aba === "materiais" ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "transparent",
+                    color: aba === "materiais" ? "#ffffff" : "#374151",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    boxShadow: aba === "materiais" ? "0 2px 4px rgba(102, 126, 234, 0.3)" : "none",
+                  }}
+                >
+                  Materiais
+                </button>
+              </div>
+            </div>
+            <div style={{ flex: 1, padding: "16px", maxWidth: "1200px", width: "100%", margin: "0 auto" }}>
 
       {aba === "materiais" && (
         <>
@@ -768,40 +798,84 @@ export function App() {
 
       {aba === "apontamento" && (
         <>
-      <section className="card">
-        <h2>Formulário de Medição</h2>
-        <form className="form" onSubmit={registrarMedicao}>
-          <h3 className="section-title">Informações gerais</h3>
-          <div className="form-row">
-            <label>
-              Dia
-              <input
-                type="date"
-                value={dia}
-                onChange={(e) => setDia(e.target.value)}
-              />
-            </label>
-            <label>
-              Semana
-              <input
-                value={semana}
-                onChange={(e) => setSemana(e.target.value)}
-              />
-            </label>
-            <label>
-              Cliente
-              <input
-                value={cliente}
-                onChange={(e) => setCliente(e.target.value)}
-              />
-            </label>
-            <label>
-              Projeto
-              <input
-                value={projetoMedicao}
-                onChange={(e) => setProjetoMedicao(e.target.value)}
-              />
-            </label>
+      <section className="card" style={{ 
+        background: "#ffffff", 
+        borderRadius: "12px", 
+        padding: "24px",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+        marginBottom: "16px"
+      }}>
+        <h2 style={{ 
+          fontSize: "1.5rem", 
+          fontWeight: 700, 
+          color: "#1f2937", 
+          marginBottom: "24px" 
+        }}>Formulário de Medição</h2>
+        <form className="form" onSubmit={registrarMedicao} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          <div>
+            <h3 className="section-title" style={{ 
+              fontSize: "1rem", 
+              fontWeight: 600, 
+              color: "#1f2937", 
+              marginBottom: "16px",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px"
+            }}>Informações gerais</h3>
+            <div className="form-row" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Dia</span>
+                <input
+                  type="date"
+                  value={dia}
+                  onChange={(e) => setDia(e.target.value)}
+                  style={{
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "0.875rem",
+                  }}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Semana</span>
+                <input
+                  value={semana}
+                  onChange={(e) => setSemana(e.target.value)}
+                  style={{
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "0.875rem",
+                  }}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Cliente</span>
+                <input
+                  value={cliente}
+                  onChange={(e) => setCliente(e.target.value)}
+                  style={{
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "0.875rem",
+                  }}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Projeto</span>
+                <input
+                  value={projetoMedicao}
+                  onChange={(e) => setProjetoMedicao(e.target.value)}
+                  style={{
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "0.875rem",
+                  }}
+                />
+              </label>
+            </div>
           </div>
 
           {!mostrarCamposAvancados && (
@@ -817,17 +891,32 @@ export function App() {
 
           {mostrarCamposAvancados && (
             <>
-              <hr style={{ borderColor: "#1f2937", margin: "16px 0" }} />
+              <hr style={{ borderColor: "#e5e7eb", margin: "24px 0", borderWidth: "1px" }} />
 
-          <h3 className="section-title">Equipe e horário</h3>
-          <div className="form-row">
-            <label>
-              Escala
-              <input
-                value={escala}
-                onChange={(e) => setEscala(e.target.value)}
-              />
-            </label>
+          <div>
+            <h3 className="section-title" style={{ 
+              fontSize: "1rem", 
+              fontWeight: 600, 
+              color: "#1f2937", 
+              marginBottom: "16px",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px"
+            }}>Equipe e horário</h3>
+            <div className="form-row" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Escala</span>
+                <input
+                  value={escala}
+                  onChange={(e) => setEscala(e.target.value)}
+                  style={{
+                    padding: "12px",
+                    borderRadius: "8px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "0.875rem",
+                  }}
+                />
+              </label>
+            </div>
           </div>
 
           <div className="form-row">
@@ -1446,7 +1535,9 @@ export function App() {
       </section>
         </>
       )}
-        </>
+            </div>
+          </div>
+        </div>
       )}
     </div>
     </div>
