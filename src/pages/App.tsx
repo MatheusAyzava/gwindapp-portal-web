@@ -117,9 +117,7 @@ export function App() {
     "home",
   );
 
-  function abrirPassagensAntigo() {
-    window.open("https://gwindapp-passagen.netlify.app/login", "_blank");
-  }
+  // Função removida - agora Passagens é integrado no portal
 
   const qtdEventosNumero =
     !qtdEventos || qtdEventos === "Nenhuma" ? 0 : Number(qtdEventos);
@@ -439,7 +437,7 @@ export function App() {
             <button
               type="button"
               className="topbar-link"
-              onClick={abrirPassagensAntigo}
+              onClick={() => setModulo("passagens")}
             >
               Passagens
             </button>
@@ -480,12 +478,12 @@ export function App() {
                 gap: 6,
                 fontSize: 16,
               }}
-              onClick={abrirPassagensAntigo}
+              onClick={() => setModulo("passagens")}
             >
               <span style={{ fontSize: 26, marginBottom: 2 }}>✈️</span>
               <span style={{ fontWeight: 700 }}>Passagens Aéreas</span>
               <span style={{ fontSize: 13, color: "#020617" }}>
-                Solicitações de viagem e cotações (módulo em construção).
+                Solicitações de viagem e cotações.
               </span>
             </button>
 
@@ -1393,6 +1391,43 @@ export function App() {
       </section>
         </>
       )}
+        </>
+      )}
+
+      {modulo === "passagens" && (
+        <>
+          <header className="materials-header" style={{ marginTop: 8 }}>
+            <h1>Passagens Aéreas</h1>
+            <p>Módulo web – solicitações de viagem e cotações.</p>
+            <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="primary-button"
+                style={{
+                  background: "transparent",
+                  color: "#374151",
+                  border: "1px solid #d1d5db",
+                }}
+                onClick={() => setModulo("home")}
+              >
+                Voltar para o portal
+              </button>
+            </div>
+          </header>
+
+          <section className="card" style={{ padding: 0, overflow: "hidden" }}>
+            <iframe
+              src="https://gwindapp-passagen.netlify.app/login"
+              style={{
+                width: "100%",
+                height: "calc(100vh - 300px)",
+                minHeight: "600px",
+                border: "none",
+                display: "block",
+              }}
+              title="Sistema de Passagens Aéreas"
+            />
+          </section>
         </>
       )}
     </div>
