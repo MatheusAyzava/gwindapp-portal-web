@@ -1417,7 +1417,7 @@ export function App() {
 
           <section className="card" style={{ padding: 0, overflow: "hidden", position: "relative" }}>
             <iframe
-              src="https://gwindapp-passagen.netlify.app/login"
+              src="https://gwindapp-passagen.netlify.app/dashboard"
               style={{
                 width: "100%",
                 height: "calc(100vh - 300px)",
