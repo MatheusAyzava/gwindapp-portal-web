@@ -352,41 +352,22 @@ export function App() {
   // sem mostrar o cabeçalho nem o conteúdo do portal.
   if (modulo === "passagens") {
     return (
-      <div className="app-shell">
+      <div className="app-shell" style={{ padding: 0 }}>
         <div
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
             width: "100%",
-            height: "100vh",
-            zIndex: 1000,
+            minHeight: "100vh",
             background: "#ffffff",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <iframe
-            src="https://gwindapp-passagen.netlify.app/dashboard"
-            style={{
-              width: "100%",
-              height: "100%",
-              border: "none",
-              display: "block",
-            }}
-            title="Sistema de Passagens Aéreas"
-            allow="fullscreen"
-            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
-            loading="lazy"
-          />
           <button
             type="button"
             onClick={() => setModulo("home")}
             style={{
-              position: "fixed",
-              top: "16px",
-              left: "16px",
-              zIndex: 1001,
+              alignSelf: "flex-start",
+              margin: "8px 8px 0 8px",
               padding: "8px 16px",
               background: "#ffffff",
               border: "1px solid #d1d5db",
@@ -396,16 +377,25 @@ export function App() {
               fontWeight: 500,
               color: "#374151",
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = "#f9fafb";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = "#ffffff";
+              zIndex: 1,
             }}
           >
             ← Voltar ao portal
           </button>
+          <iframe
+            src="https://gwindapp-passagen.netlify.app/dashboard"
+            style={{
+              width: "100%",
+              flex: 1,
+              minHeight: "0",
+              border: "none",
+              display: "block",
+            }}
+            title="Sistema de Passagens Aéreas"
+            allow="fullscreen"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
+            loading="lazy"
+          />
         </div>
       </div>
     );
