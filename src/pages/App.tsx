@@ -37,7 +37,8 @@ type MedicaoGrid = {
 };
 
 // Backend principal do portal roda na porta 4001 (para não conflitar com o servidor de passagens).
-const API_BASE_URL = "http://localhost:4001";
+// Usa variável de ambiente se disponível, senão usa localhost
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4001";
 
 export function App() {
   const [materiais, setMateriais] = useState<Material[]>([]);
@@ -384,9 +385,11 @@ export function App() {
     // Processa as linhas (pula o cabeçalho se for texto)
     const linhasDados = linhas.filter((linha, index) => {
       if (index === 0) {
-        // Verifica se a primeira linha é cabeçalho (não tem código)
+        // Verifica se a primeira linha é cabeçalho (não tem código numérico ou alfanumérico)
         const partes = linha.split(/[\t;]+/).map(p => p.trim());
-        return !partes[codigoIndex]?.match(/^[A-Z]\d+/);
+        const codigo = partes[codigoIndex] || "";
+        // Se não tem código válido (numérico ou alfanumérico), é cabeçalho
+        return !(codigo.match(/^[A-Z]\d+/) || codigo.match(/^\d+/) || codigo.match(/^[A-Z0-9]+/));
       }
       return true;
     });
@@ -432,9 +435,10 @@ export function App() {
         centroCustos: centroCustosIndex !== -1 ? partes[centroCustosIndex] : undefined,
       };
     }).filter(item => {
-      // Filtra apenas itens válidos (com código no formato esperado)
+      // Filtra apenas itens válidos (aceita códigos numéricos ou alfanuméricos)
       return item.codigoItem && 
-             item.codigoItem.match(/^[A-Z]\d+/) && 
+             item.codigoItem.trim().length > 0 &&
+             (item.codigoItem.match(/^[A-Z]\d+/) || item.codigoItem.match(/^\d+/) || item.codigoItem.match(/^[A-Z0-9]+/)) && 
              item.descricao && 
              item.descricao.length > 0;
     });
@@ -446,15 +450,22 @@ export function App() {
 
     try {
       setErro(null);
-      await axios.post(`${API_BASE_URL}/materiais/import`, { itens });
+      setLoading(true);
+      console.log("Enviando", itens.length, "itens para o backend...");
+      const response = await axios.post(`${API_BASE_URL}/materiais/import`, { itens });
+      console.log("Resposta do backend:", response.data);
       setMensagemImportacao(
-        `Importação concluída. ${itens.length} material(is) processado(s) com sucesso.`,
+        `Importação concluída. ${response.data?.quantidadeImportada || itens.length} material(is) processado(s) com sucesso.`,
       );
       setTextoImportacao("");
       await carregarMateriais();
     } catch (e: any) {
-      console.error(e);
-      setErro(e.response?.data?.error || "Erro ao importar materiais. Verifique o formato dos dados.");
+      console.error("Erro completo:", e);
+      console.error("Resposta do erro:", e.response?.data);
+      const mensagemErro = e.response?.data?.error || e.message || "Erro ao importar materiais. Verifique o formato dos dados e se o backend está rodando.";
+      setErro(mensagemErro);
+    } finally {
+      setLoading(false);
     }
   }
 
