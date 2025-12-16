@@ -1415,7 +1415,7 @@ export function App() {
             </div>
           </header>
 
-          <section className="card" style={{ padding: 0, overflow: "hidden" }}>
+          <section className="card" style={{ padding: 0, overflow: "hidden", position: "relative" }}>
             <iframe
               src="https://gwindapp-passagen.netlify.app/login"
               style={{
@@ -1426,6 +1426,9 @@ export function App() {
                 display: "block",
               }}
               title="Sistema de Passagens Aéreas"
+              allow="fullscreen"
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
+              loading="lazy"
             />
           </section>
         </>
