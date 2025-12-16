@@ -350,6 +350,7 @@ export function App() {
 
   return (
     <div className="app-shell">
+      {modulo !== "passagens" && (
       <header className="topbar">
         <div className="topbar-inner">
           <div className="topbar-logo">
@@ -444,12 +445,15 @@ export function App() {
           </nav>
         </div>
       </header>
+      )}
 
       <div className="container">
+      {modulo !== "passagens" && (
       <header className="header">
         <h1>Portal da Empresa</h1>
         <p>Módulo web – acesso a materiais, passagens e outros setores.</p>
       </header>
+      )}
 
       {modulo === "home" && (
         <section className="card">
@@ -1395,43 +1399,58 @@ export function App() {
       )}
 
       {modulo === "passagens" && (
-        <>
-          <header className="materials-header" style={{ marginTop: 8 }}>
-            <h1>Passagens Aéreas</h1>
-            <p>Módulo web – solicitações de viagem e cotações.</p>
-            <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button
-                type="button"
-                className="primary-button"
-                style={{
-                  background: "transparent",
-                  color: "#374151",
-                  border: "1px solid #d1d5db",
-                }}
-                onClick={() => setModulo("home")}
-              >
-                Voltar para o portal
-              </button>
-            </div>
-          </header>
-
-          <section className="card" style={{ padding: 0, overflow: "hidden", position: "relative" }}>
-            <iframe
-              src="https://gwindapp-passagen.netlify.app/dashboard"
-              style={{
-                width: "100%",
-                height: "calc(100vh - 300px)",
-                minHeight: "600px",
-                border: "none",
-                display: "block",
-              }}
-              title="Sistema de Passagens Aéreas"
-              allow="fullscreen"
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
-              loading="lazy"
-            />
-          </section>
-        </>
+        <div style={{ 
+          position: "fixed", 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          width: "100%", 
+          height: "100vh",
+          zIndex: 1000,
+          background: "#ffffff"
+        }}>
+          <iframe
+            src="https://gwindapp-passagen.netlify.app/dashboard"
+            style={{
+              width: "100%",
+              height: "100%",
+              border: "none",
+              display: "block",
+            }}
+            title="Sistema de Passagens Aéreas"
+            allow="fullscreen"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
+            loading="lazy"
+          />
+          <button
+            type="button"
+            onClick={() => setModulo("home")}
+            style={{
+              position: "fixed",
+              top: "16px",
+              left: "16px",
+              zIndex: 1001,
+              padding: "8px 16px",
+              background: "#ffffff",
+              border: "1px solid #d1d5db",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: 500,
+              color: "#374151",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#f9fafb";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "#ffffff";
+            }}
+          >
+            ← Voltar ao portal
+          </button>
+        </div>
       )}
     </div>
     </div>
