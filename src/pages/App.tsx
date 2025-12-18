@@ -138,6 +138,7 @@ export function App() {
   const [gelValidade, setGelValidade] = useState("");
 
   const [retrabalho, setRetrabalho] = useState<"Sim" | "Não" | "">("");
+  const [mostrarSomenteNoEstoque, setMostrarSomenteNoEstoque] = useState(true);
 
   const [medicoes, setMedicoes] = useState<MedicaoGrid[]>([]);
   const [aba, setAba] = useState<"apontamento" | "materiais">("apontamento");
@@ -250,7 +251,7 @@ export function App() {
 
     const tokens = (s: string) => limparDescEstoque(s).split(" ").filter((x) => x.length >= 3);
 
-    return descricoes.map((desc) => {
+    const opts = descricoes.map((desc) => {
       const alvo = limparDescEstoque(desc);
       const alvoTokens = tokens(desc);
       const match =
@@ -270,6 +271,7 @@ export function App() {
         encontrado: Boolean(match),
       };
     });
+    return mostrarSomenteNoEstoque ? opts.filter((o) => o.encontrado) : opts;
   };
 
   const abrirEdicaoMaterial = (m: Material) => {
@@ -1823,6 +1825,14 @@ export function App() {
             <p style={{ margin: 0, color: "#6b7280", fontSize: 14 }}>
               O desconto do estoque é feito automaticamente pelos campos do formulário (Resina, Massa, PU e Gel).
             </p>
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 10, marginTop: 12, fontSize: 14, color: "#374151" }}>
+              <input
+                type="checkbox"
+                checked={mostrarSomenteNoEstoque}
+                onChange={(e) => setMostrarSomenteNoEstoque(e.target.checked)}
+              />
+              Mostrar apenas itens encontrados no estoque
+            </label>
           </div>
 
           <hr style={{ borderColor: "#e5e7eb", margin: "24px 0", borderWidth: "1px" }} />
