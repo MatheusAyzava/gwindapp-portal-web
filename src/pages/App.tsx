@@ -1923,7 +1923,7 @@ export function App() {
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Projeto</span>
-                <input
+                <select
                   value={projetoMedicao}
                   onChange={(e) => setProjetoMedicao(e.target.value)}
                   style={{
@@ -1931,8 +1931,21 @@ export function App() {
                     borderRadius: "8px",
                     border: "1px solid #d1d5db",
                     fontSize: "0.875rem",
+                    background: "#ffffff",
+                    color: "#1f2937",
                   }}
-                />
+                >
+                  <option value="">Selecione o projeto...</option>
+                  {Array.from(
+                    new Set(materiais.map((m) => m.codigoProjeto).filter((p): p is string => Boolean(p))),
+                  )
+                    .sort()
+                    .map((proj) => (
+                      <option key={proj} value={proj}>
+                        {proj} - {materiais.find((m) => m.codigoProjeto === proj)?.descricaoProjeto || ""}
+                      </option>
+                    ))}
+                </select>
               </label>
             </div>
           </div>
