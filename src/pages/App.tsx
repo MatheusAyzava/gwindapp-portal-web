@@ -51,6 +51,9 @@ export function App() {
   const [erro, setErro] = useState<string | null>(null);
   const [buscaEstoque, setBuscaEstoque] = useState("");
   const [filtroProjeto, setFiltroProjeto] = useState("");
+  const [filtroStatusEstoque, setFiltroStatusEstoque] = useState<
+    "" | "somente_100" | "acima_1" | "maior_0"
+  >("");
 
   // Edição/remoção de material (tela de estoque)
   const [materialEditando, setMaterialEditando] = useState<Material | null>(null);
@@ -1418,6 +1421,25 @@ export function App() {
                 </option>
               ))}
             </select>
+            <select
+              value={filtroStatusEstoque}
+              onChange={(e) => setFiltroStatusEstoque(e.target.value as any)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "1px solid #d1d5db",
+                fontSize: "0.875rem",
+                background: "#ffffff",
+                color: "#374151",
+                cursor: "pointer",
+                minWidth: "200px",
+              }}
+            >
+              <option value="">Todos os status</option>
+              <option value="somente_100">Somente 100%</option>
+              <option value="acima_1">Acima de 1%</option>
+              <option value="maior_0">Maior que 0%</option>
+            </select>
             <input
               type="text"
               placeholder="Buscar por código ou descrição..."
@@ -1437,7 +1459,13 @@ export function App() {
                   m.codigoItem.toLowerCase().includes(buscaEstoque.toLowerCase()) ||
                   m.descricao.toLowerCase().includes(buscaEstoque.toLowerCase());
                 const matchProjeto = !filtroProjeto || m.codigoProjeto === filtroProjeto;
-                return matchBusca && matchProjeto;
+                const percentual = m.estoqueInicial > 0 ? (m.estoqueAtual / m.estoqueInicial) * 100 : 0;
+                const matchStatus =
+                  !filtroStatusEstoque ||
+                  (filtroStatusEstoque === "somente_100" ? percentual >= 100 : true) &&
+                  (filtroStatusEstoque === "acima_1" ? percentual > 1 : true) &&
+                  (filtroStatusEstoque === "maior_0" ? percentual > 0 : true);
+                return matchBusca && matchProjeto && matchStatus;
               }).length} material(is)
             </span>
           </div>
@@ -1475,7 +1503,13 @@ export function App() {
                       m.codigoItem.toLowerCase().includes(buscaEstoque.toLowerCase()) ||
                       m.descricao.toLowerCase().includes(buscaEstoque.toLowerCase());
                     const matchProjeto = !filtroProjeto || m.codigoProjeto === filtroProjeto;
-                    return matchBusca && matchProjeto;
+                    const percentual = m.estoqueInicial > 0 ? (m.estoqueAtual / m.estoqueInicial) * 100 : 0;
+                    const matchStatus =
+                      !filtroStatusEstoque ||
+                      (filtroStatusEstoque === "somente_100" ? percentual >= 100 : true) &&
+                      (filtroStatusEstoque === "acima_1" ? percentual > 1 : true) &&
+                      (filtroStatusEstoque === "maior_0" ? percentual > 0 : true);
+                    return matchBusca && matchProjeto && matchStatus;
                   })
                   .map((m) => {
                     const percentual = m.estoqueInicial > 0 
