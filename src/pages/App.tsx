@@ -192,7 +192,9 @@ export function App() {
 
   const [medicoes, setMedicoes] = useState<MedicaoGrid[]>([]);
   const [medicoesSmartsheet, setMedicoesSmartsheet] = useState<MedicaoSmartsheetRow[]>([]);
-  const [aba, setAba] = useState<"apontamento" | "materiais">("apontamento");
+  const [aba, setAba] = useState<"apontamento" | "materiais" | "registro">(
+    "apontamento",
+  );
   const [modulo, setModulo] = useState<"home" | "materiais" | "passagens">(
     "home",
   );
@@ -1207,9 +1209,26 @@ export function App() {
                 >
                   Materiais
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setAba("registro")}
+                  style={{
+                    padding: "8px 16px",
+                    background: aba === "registro" ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : "transparent",
+                    color: aba === "registro" ? "#ffffff" : "#374151",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    boxShadow: aba === "registro" ? "0 2px 4px rgba(102, 126, 234, 0.3)" : "none",
+                  }}
+                >
+                  Registro Geral
+                </button>
               </div>
             </div>
-            <div style={{ flex: 1, padding: "16px", maxWidth: "1200px", width: "100%", margin: "0 auto" }}>
+            <div style={{ flex: 1, padding: "16px", maxWidth: aba === "registro" ? "100%" : "1200px", width: "100%", margin: "0 auto" }}>
 
       {aba === "materiais" && (
         <>
@@ -1707,184 +1726,121 @@ export function App() {
         )}
       </section>
 
-      <section className="card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
-          <div>
-            <h2 style={{ margin: 0 }}>Registro de Apontamentos</h2>
-            <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 14 }}>
-              Histórico de tudo que foi apontado (quem fez, o que gastou e onde).
-            </p>
-          </div>
-          <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
-            {medicoes.length} registro(s)
-          </span>
-        </div>
+        </>
+      )}
 
-        {medicoes.length === 0 ? (
-          <p style={{ color: "#6b7280" }}>Nenhum apontamento registrado ainda.</p>
-        ) : (
-          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-            <table className="table" style={{ width: "100%", minWidth: "1100px", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
-                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Data/Hora</th>
-                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Quem fez</th>
-                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Projeto</th>
-                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Item</th>
-                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Descrição</th>
-                  <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd. consumida</th>
-                  <th style={{ padding: "12px", textAlign: "center", fontWeight: 600, color: "#374151" }}>Unid.</th>
-                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>WTG / Torre</th>
-                </tr>
-              </thead>
-              <tbody>
-                {medicoes.map((m) => {
-                  const quem = (m.tecnicoLider || "").trim() || (m.nomesTecnicos || "").trim() || "—";
-                  const dataStr = m.criadoEm ? new Date(m.criadoEm).toLocaleString("pt-BR") : "—";
-                  return (
-                    <tr key={m.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                      <td style={{ padding: "12px", color: "#374151", whiteSpace: "nowrap" }}>{dataStr}</td>
-                      <td style={{ padding: "12px", color: "#374151" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                          <span style={{ fontWeight: 600, color: "#111827" }}>{quem}</span>
-                          {m.nomesTecnicos && m.nomesTecnicos !== m.tecnicoLider ? (
-                            <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>{m.nomesTecnicos}</span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td style={{ padding: "12px", color: "#374151" }}>{m.projeto || "—"}</td>
-                      <td style={{ padding: "12px", fontWeight: 600, color: "#1f2937", whiteSpace: "nowrap" }}>{m.codigoItem || "—"}</td>
-                      <td style={{ padding: "12px", color: "#374151" }}>{m.descricaoMaterial || "—"}</td>
-                      <td style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#1f2937", whiteSpace: "nowrap" }}>
-                        {Number(m.quantidadeConsumida || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td style={{ padding: "12px", textAlign: "center", color: "#6b7280", whiteSpace: "nowrap" }}>{m.unidadeMaterial || "—"}</td>
-                      <td style={{ padding: "12px", color: "#374151" }}>{m.torre || "—"}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section className="card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
-          <div>
+      {aba === "registro" && (
+        <section className="card" style={{ padding: 0 }}>
+          <div style={{ padding: "16px", borderBottom: "1px solid #e5e7eb" }}>
             <h2 style={{ margin: 0 }}>Registro Geral (tipo Smartsheet)</h2>
             <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 14 }}>
-              Visão completa com todas as colunas principais do apontamento.
+              Tela cheia do registro completo. Use scroll horizontal para navegar nas colunas.
             </p>
           </div>
-          <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
-            {medicoesSmartsheet.length} linha(s)
-          </span>
-        </div>
-
-        {medicoesSmartsheet.length === 0 ? (
-          <p style={{ color: "#6b7280" }}>Nenhum registro ainda.</p>
-        ) : (
-          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-            <table className="table" style={{ width: "100%", minWidth: "1800px", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Data/Hora</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Dia</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Semana</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Cliente</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Projeto</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Escala</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Técnico Líder</th>
-                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Técn.</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Nome dos Técnicos</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Supervisor</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo Intervalo</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo Acesso</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Pá</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>WTG/Torre</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Plataforma</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Equipe</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo de Hora</th>
-                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Eventos</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Hora Início</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Hora Fim</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo de Dano</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Dano</th>
-                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Largura (mm)</th>
-                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Comprimento (mm)</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Etapa Processo</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Etapa Lixamento</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Resina</th>
-                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Resina</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Massa</th>
-                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Massa</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Núcleo</th>
-                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Esp. Núcleo (mm)</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>PU</th>
-                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Peso PU</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Gel</th>
-                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Peso Gel</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Retrabalho?</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Item (código)</th>
-                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Item (descrição)</th>
-                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd consumida</th>
-                  <th style={{ padding: "10px", textAlign: "center", fontWeight: 600, color: "#374151" }}>Unid.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {medicoesSmartsheet.map((m) => (
-                  <tr key={`sm-${m.id}`} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                    <td style={{ padding: "10px", whiteSpace: "nowrap" }}>{m.data ? new Date(m.data).toLocaleString("pt-BR") : "—"}</td>
-                    <td style={{ padding: "10px", whiteSpace: "nowrap" }}>{m.dia ? new Date(m.dia).toLocaleDateString("pt-BR") : "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.semana || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.cliente || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.projeto || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.escala || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.tecnicoLider || "—"}</td>
-                    <td style={{ padding: "10px", textAlign: "right" }}>{m.quantidadeTecnicos ?? "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.nomesTecnicos || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.supervisor || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.tipoIntervalo || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.tipoAcesso || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.pa || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.torre || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.plataforma || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.equipe || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.tipoHora || "—"}</td>
-                    <td style={{ padding: "10px", textAlign: "right" }}>{m.quantidadeEventos ?? "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.horaInicio || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.horaFim || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.tipoDano || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.danoCodigo || "—"}</td>
-                    <td style={{ padding: "10px", textAlign: "right" }}>{m.larguraDanoMm ?? "—"}</td>
-                    <td style={{ padding: "10px", textAlign: "right" }}>{m.comprimentoDanoMm ?? "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.etapaProcesso || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.etapaLixamento || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.resinaTipo || "—"}</td>
-                    <td style={{ padding: "10px", textAlign: "right" }}>{m.resinaQuantidade ?? "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.massaTipo || "—"}</td>
-                    <td style={{ padding: "10px", textAlign: "right" }}>{m.massaQuantidade ?? "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.nucleoTipo || "—"}</td>
-                    <td style={{ padding: "10px", textAlign: "right" }}>{m.nucleoEspessuraMm ?? "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.puTipo || "—"}</td>
-                    <td style={{ padding: "10px", textAlign: "right" }}>{m.puMassaPeso ?? "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.gelTipo || "—"}</td>
-                    <td style={{ padding: "10px", textAlign: "right" }}>{m.gelPeso ?? "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.retrabalho === null ? "—" : m.retrabalho ? "Sim" : "Não"}</td>
-                    <td style={{ padding: "10px", whiteSpace: "nowrap", fontWeight: 600 }}>{m.itemCodigo || "—"}</td>
-                    <td style={{ padding: "10px" }}>{m.itemDescricao || "—"}</td>
-                    <td style={{ padding: "10px", textAlign: "right", fontWeight: 600 }}>
-                      {Number(m.quantidadeConsumida || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td style={{ padding: "10px", textAlign: "center" }}>{m.itemUnidade || "—"}</td>
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", padding: "8px 16px 16px" }}>
+            {medicoesSmartsheet.length === 0 ? (
+              <p style={{ color: "#6b7280" }}>Nenhum registro ainda.</p>
+            ) : (
+              <table className="table" style={{ width: "100%", minWidth: "1800px", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Data/Hora</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Dia</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Semana</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Cliente</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Projeto</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Escala</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Técnico Líder</th>
+                    <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Técn.</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Nome dos Técnicos</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Supervisor</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo Intervalo</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo Acesso</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Pá</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>WTG/Torre</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Plataforma</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Equipe</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo de Hora</th>
+                    <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Eventos</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Hora Início</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Hora Fim</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo de Dano</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Dano</th>
+                    <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Largura (mm)</th>
+                    <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Comprimento (mm)</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Etapa Processo</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Etapa Lixamento</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Resina</th>
+                    <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Resina</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Massa</th>
+                    <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Massa</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Núcleo</th>
+                    <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Esp. Núcleo (mm)</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>PU</th>
+                    <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Peso PU</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Gel</th>
+                    <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Peso Gel</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Retrabalho?</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Item (código)</th>
+                    <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Item (descrição)</th>
+                    <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd consumida</th>
+                    <th style={{ padding: "10px", textAlign: "center", fontWeight: 600, color: "#374151" }}>Unid.</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {medicoesSmartsheet.map((m) => (
+                    <tr key={`smfs-${m.id}`} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                      <td style={{ padding: "10px", whiteSpace: "nowrap" }}>{m.data ? new Date(m.data).toLocaleString("pt-BR") : "—"}</td>
+                      <td style={{ padding: "10px", whiteSpace: "nowrap" }}>{m.dia ? new Date(m.dia).toLocaleDateString("pt-BR") : "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.semana || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.cliente || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.projeto || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.escala || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.tecnicoLider || "—"}</td>
+                      <td style={{ padding: "10px", textAlign: "right" }}>{m.quantidadeTecnicos ?? "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.nomesTecnicos || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.supervisor || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.tipoIntervalo || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.tipoAcesso || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.pa || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.torre || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.plataforma || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.equipe || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.tipoHora || "—"}</td>
+                      <td style={{ padding: "10px", textAlign: "right" }}>{m.quantidadeEventos ?? "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.horaInicio || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.horaFim || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.tipoDano || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.danoCodigo || "—"}</td>
+                      <td style={{ padding: "10px", textAlign: "right" }}>{m.larguraDanoMm ?? "—"}</td>
+                      <td style={{ padding: "10px", textAlign: "right" }}>{m.comprimentoDanoMm ?? "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.etapaProcesso || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.etapaLixamento || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.resinaTipo || "—"}</td>
+                      <td style={{ padding: "10px", textAlign: "right" }}>{m.resinaQuantidade ?? "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.massaTipo || "—"}</td>
+                      <td style={{ padding: "10px", textAlign: "right" }}>{m.massaQuantidade ?? "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.nucleoTipo || "—"}</td>
+                      <td style={{ padding: "10px", textAlign: "right" }}>{m.nucleoEspessuraMm ?? "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.puTipo || "—"}</td>
+                      <td style={{ padding: "10px", textAlign: "right" }}>{m.puMassaPeso ?? "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.gelTipo || "—"}</td>
+                      <td style={{ padding: "10px", textAlign: "right" }}>{m.gelPeso ?? "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.retrabalho === null ? "—" : m.retrabalho ? "Sim" : "Não"}</td>
+                      <td style={{ padding: "10px", whiteSpace: "nowrap", fontWeight: 600 }}>{m.itemCodigo || "—"}</td>
+                      <td style={{ padding: "10px" }}>{m.itemDescricao || "—"}</td>
+                      <td style={{ padding: "10px", textAlign: "right", fontWeight: 600 }}>
+                        {Number(m.quantidadeConsumida || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td style={{ padding: "10px", textAlign: "center" }}>{m.itemUnidade || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Modal simples de edição */}
       {materialEditando && (
@@ -2051,8 +2007,6 @@ export function App() {
           Esta ação remove todos os materiais e medições do banco de dados. Use apenas para limpar dados de teste antes de importar a lista real.
         </p>
       </section>
-        </>
-      )}
 
       {aba === "apontamento" && (
         <>
