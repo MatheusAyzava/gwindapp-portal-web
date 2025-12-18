@@ -156,6 +156,35 @@ export function App() {
     carregarMedicoes();
   }, []);
 
+  const normalizarTexto = (s: string) =>
+    (s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+  const materiaisDoProjetoSelecionado = (codigoProjeto: string) => {
+    const candidatosProjeto = materiais.filter((m) => (m.codigoProjeto || "") === codigoProjeto);
+    return candidatosProjeto.length > 0 ? candidatosProjeto : materiais;
+  };
+
+  const opcoesEstoquePorCategoria = (
+    codigoProjeto: string,
+    palavrasChave: string[],
+  ): Material[] => {
+    const base = materiaisDoProjetoSelecionado(codigoProjeto);
+    const kws = palavrasChave.map(normalizarTexto).filter(Boolean);
+    return base
+      .filter((m) => {
+        const desc = normalizarTexto(m.descricao || "");
+        return kws.some((k) => desc.includes(k));
+      })
+      .sort((a, b) => (a.descricao || "").localeCompare(b.descricao || "", "pt-BR"));
+  };
+
+  const materialPorCodigo = (codigoItem: string) =>
+    materiais.find((m) => m.codigoItem === codigoItem) || null;
+
   const abrirEdicaoMaterial = (m: Material) => {
     setMaterialEditando(m);
     setEditDescricao(m.descricao || "");
@@ -258,43 +287,26 @@ export function App() {
       const projetoSelecionado = projetoMedicao || "PROJETO-TESTE";
 
       // Consumir materiais automaticamente pelos campos do formulário
-      const consumos: Array<{ tipo: string; nome: string; quantidade: number }> = [];
+      const consumos: Array<{ tipo: string; codigoItem: string; quantidade: number }> = [];
       const qResina = Number(resinaQuantidade || 0);
       const qMassa = Number(massaQuantidade || 0);
       const qPU = Number(puMassaPeso || 0);
       const qGel = Number(gelPeso || 0);
 
-      if (resinaTipo && qResina > 0) consumos.push({ tipo: "Resina", nome: resinaTipo, quantidade: qResina });
-      if (massaTipo && qMassa > 0) consumos.push({ tipo: "Massa", nome: massaTipo, quantidade: qMassa });
-      if (puTipo && qPU > 0) consumos.push({ tipo: "PU", nome: puTipo, quantidade: qPU });
-      if (gelTipo && qGel > 0) consumos.push({ tipo: "Gel", nome: gelTipo, quantidade: qGel });
+      if (resinaTipo && qResina > 0) consumos.push({ tipo: "Resina", codigoItem: resinaTipo, quantidade: qResina });
+      if (massaTipo && qMassa > 0) consumos.push({ tipo: "Massa", codigoItem: massaTipo, quantidade: qMassa });
+      if (puTipo && qPU > 0) consumos.push({ tipo: "PU", codigoItem: puTipo, quantidade: qPU });
+      if (gelTipo && qGel > 0) consumos.push({ tipo: "Gel", codigoItem: gelTipo, quantidade: qGel });
 
       if (consumos.length === 0) {
         setErro("Preencha pelo menos um consumo (Resina/Massa/PU/Gel) com quantidade > 0.");
         return;
       }
 
-      const normalizar = (s: string) =>
-        s
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .trim();
-
-      const encontrarMaterial = (nome: string) => {
-        const n = normalizar(nome);
-        const candidatosProjeto = materiais.filter((m) => (m.codigoProjeto || "") === projetoSelecionado);
-        const candidatos = (candidatosProjeto.length > 0 ? candidatosProjeto : materiais).filter((m) => {
-          const desc = normalizar(m.descricao || "");
-          return desc.includes(n);
-        });
-        return candidatos[0] || null;
-      };
-
       for (const c of consumos) {
-        const material = encontrarMaterial(c.nome);
+        const material = materialPorCodigo(c.codigoItem);
         if (!material) {
-          setErro(`Não encontrei no estoque um material para "${c.tipo}: ${c.nome}" no projeto "${projetoSelecionado}". Cadastre/import e tente novamente.`);
+          setErro(`Não encontrei no estoque o Nº do item "${c.codigoItem}" para "${c.tipo}".`);
           return;
         }
 
@@ -327,24 +339,25 @@ export function App() {
           comprimentoDanoMm: comprimentoDano ? Number(comprimentoDano) : null,
           etapaProcesso,
           etapaLixamento,
-          resinaTipo,
+          // Guardar no registro o nome (descrição) do estoque, e não apenas o código
+          resinaTipo: resinaTipo ? materialPorCodigo(resinaTipo)?.descricao || null : null,
           resinaQuantidade: resinaQuantidade ? Number(resinaQuantidade) : null,
           resinaCatalisador,
           resinaLote,
           resinaValidade,
-          massaTipo,
+          massaTipo: massaTipo ? materialPorCodigo(massaTipo)?.descricao || null : null,
           massaQuantidade: massaQuantidade ? Number(massaQuantidade) : null,
           massaCatalisador,
           massaLote,
           massaValidade,
           nucleoTipo,
           nucleoEspessuraMm: nucleoEspessura ? Number(nucleoEspessura) : null,
-          puTipo,
+          puTipo: puTipo ? materialPorCodigo(puTipo)?.descricao || null : null,
           puMassaPeso: puMassaPeso ? Number(puMassaPeso) : null,
           puCatalisadorPeso: puCatalisadorPeso ? Number(puCatalisadorPeso) : null,
           puLote,
           puValidade,
-          gelTipo,
+          gelTipo: gelTipo ? materialPorCodigo(gelTipo)?.descricao || null : null,
           gelPeso: gelPeso ? Number(gelPeso) : null,
           gelCatalisadorPeso: gelCatalisadorPeso ? Number(gelCatalisadorPeso) : null,
           gelLote,
@@ -2191,12 +2204,14 @@ export function App() {
                     }}
                   >
                     <option value="">Selecione...</option>
-                    <option value="Hexion 635">Hexion 635</option>
-                    <option value="Olin 720">Olin 720</option>
-                    <option value="Sika Biresin">Sika Biresin</option>
-                    <option value="Ampreg 30">Ampreg 30</option>
-                    <option value="Ampreg 31">Ampreg 31</option>
-                    <option value="Prime 37">Prime 37</option>
+                    {opcoesEstoquePorCategoria(
+                      projetoMedicao || "",
+                      ["resina", "epoxy", "endurecedor", "hardener", "ampreg", "biresin", "olin", "hexion"],
+                    ).map((m) => (
+                      <option key={`resina-${m.id}`} value={m.codigoItem}>
+                        {m.codigoItem} - {m.descricao}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label>
@@ -2255,9 +2270,14 @@ export function App() {
                     }}
                   >
                     <option value="">Selecione...</option>
-                    <option value="Hexion G3">Hexion G3</option>
-                    <option value="Sika 818">Sika 818</option>
-                    <option value="Sika 800">Sika 800</option>
+                    {opcoesEstoquePorCategoria(
+                      projetoMedicao || "",
+                      ["massa", "putty", "adesivo", "bpr", "colagem"],
+                    ).map((m) => (
+                      <option key={`massa-${m.id}`} value={m.codigoItem}>
+                        {m.codigoItem} - {m.descricao}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label>
@@ -2372,9 +2392,14 @@ export function App() {
                     }}
                   >
                     <option value="">Selecione...</option>
-                    <option value="Mankiewicz">Mankiewicz</option>
-                    <option value="Weg">Weg</option>
-                    <option value="Sika">Sika</option>
+                    {opcoesEstoquePorCategoria(
+                      projetoMedicao || "",
+                      ["pu", "poliuretano", "filler"],
+                    ).map((m) => (
+                      <option key={`pu-${m.id}`} value={m.codigoItem}>
+                        {m.codigoItem} - {m.descricao}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label>
@@ -2434,8 +2459,14 @@ export function App() {
                     }}
                   >
                     <option value="">Selecione...</option>
-                    <option value="Mankevicz">Mankevicz</option>
-                    <option value="Weg">Weg</option>
+                    {opcoesEstoquePorCategoria(
+                      projetoMedicao || "",
+                      ["gel", "gelcoat"],
+                    ).map((m) => (
+                      <option key={`gel-${m.id}`} value={m.codigoItem}>
+                        {m.codigoItem} - {m.descricao}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label>
