@@ -45,6 +45,7 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [buscaEstoque, setBuscaEstoque] = useState("");
+  const [filtroProjeto, setFiltroProjeto] = useState("");
 
   const [codigoItem, setCodigoItem] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -1187,6 +1188,27 @@ export function App() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
           <h2 style={{ margin: 0 }}>Estoque de Materiais</h2>
           <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+            <select
+              value={filtroProjeto}
+              onChange={(e) => setFiltroProjeto(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "8px",
+                border: "1px solid #d1d5db",
+                fontSize: "0.875rem",
+                background: "#ffffff",
+                color: "#374151",
+                cursor: "pointer",
+                minWidth: "180px",
+              }}
+            >
+              <option value="">Todos os projetos</option>
+              {Array.from(new Set(materiais.map(m => m.codigoProjeto).filter((p): p is string => Boolean(p)))).sort().map((proj) => (
+                <option key={proj} value={proj}>
+                  {proj} - {materiais.find(m => m.codigoProjeto === proj)?.descricaoProjeto || ""}
+                </option>
+              ))}
+            </select>
             <input
               type="text"
               placeholder="Buscar por código ou descrição..."
@@ -1201,11 +1223,13 @@ export function App() {
               }}
             />
             <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
-              {materiais.filter(m => 
-                !buscaEstoque || 
-                m.codigoItem.toLowerCase().includes(buscaEstoque.toLowerCase()) ||
-                m.descricao.toLowerCase().includes(buscaEstoque.toLowerCase())
-              ).length} material(is)
+              {materiais.filter(m => {
+                const matchBusca = !buscaEstoque || 
+                  m.codigoItem.toLowerCase().includes(buscaEstoque.toLowerCase()) ||
+                  m.descricao.toLowerCase().includes(buscaEstoque.toLowerCase());
+                const matchProjeto = !filtroProjeto || m.codigoProjeto === filtroProjeto;
+                return matchBusca && matchProjeto;
+              }).length} material(is)
             </span>
           </div>
         </div>
@@ -1220,6 +1244,7 @@ export function App() {
                 <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
                   <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Nº do item</th>
                   <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Descrição</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Projeto</th>
                   <th style={{ padding: "12px", textAlign: "center", fontWeight: 600, color: "#374151" }}>Unidade</th>
                   <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Estoque inicial</th>
                   <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Estoque atual</th>
@@ -1228,11 +1253,13 @@ export function App() {
               </thead>
               <tbody>
                 {materiais
-                  .filter(m => 
-                    !buscaEstoque || 
-                    m.codigoItem.toLowerCase().includes(buscaEstoque.toLowerCase()) ||
-                    m.descricao.toLowerCase().includes(buscaEstoque.toLowerCase())
-                  )
+                  .filter(m => {
+                    const matchBusca = !buscaEstoque || 
+                      m.codigoItem.toLowerCase().includes(buscaEstoque.toLowerCase()) ||
+                      m.descricao.toLowerCase().includes(buscaEstoque.toLowerCase());
+                    const matchProjeto = !filtroProjeto || m.codigoProjeto === filtroProjeto;
+                    return matchBusca && matchProjeto;
+                  })
                   .map((m) => {
                     const percentual = m.estoqueInicial > 0 
                       ? (m.estoqueAtual / m.estoqueInicial) * 100 
@@ -1242,6 +1269,31 @@ export function App() {
                       <tr key={m.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
                         <td style={{ padding: "12px", fontWeight: 600, color: "#1f2937" }}>{m.codigoItem}</td>
                         <td style={{ padding: "12px", color: "#374151" }}>{m.descricao}</td>
+                        <td style={{ padding: "12px", color: "#374151" }}>
+                          {m.codigoProjeto ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                              <span style={{ 
+                                display: "inline-block",
+                                width: "fit-content",
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                fontSize: "0.75rem",
+                                background: "#e0f2fe",
+                                color: "#0369a1",
+                                fontWeight: 600
+                              }}>
+                                {m.codigoProjeto}
+                              </span>
+                              {m.descricaoProjeto ? (
+                                <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>
+                                  {m.descricaoProjeto}
+                                </span>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>—</span>
+                          )}
+                        </td>
                         <td style={{ padding: "12px", textAlign: "center", color: "#6b7280" }}>{m.unidade}</td>
                         <td style={{ padding: "12px", textAlign: "right", color: "#6b7280" }}>
                           {m.estoqueInicial.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1302,6 +1354,60 @@ export function App() {
             Importar do Smartsheet
           </button>
         </div>
+      </section>
+
+      <section className="card" style={{ border: "2px solid #ef4444" }}>
+        <h2 style={{ color: "#dc2626" }}>⚠️ Gerenciamento de Dados</h2>
+        <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>
+          <strong>Atenção:</strong> As ações abaixo são irreversíveis. Use apenas para limpar dados de teste.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!confirm("⚠️ ATENÇÃO: Isso vai apagar TODOS os materiais e medições!\n\nEsta ação é IRREVERSÍVEL.\n\nTem certeza que deseja continuar?")) {
+                return;
+              }
+              
+              if (!confirm("⚠️ ÚLTIMA CONFIRMAÇÃO:\n\nVocê realmente quer apagar TODOS os dados?\n\nIsso não pode ser desfeito!")) {
+                return;
+              }
+
+              try {
+                setLoading(true);
+                setErro(null);
+                const response = await axios.delete(`${API_BASE_URL}/materiais/limpar-tudo`);
+                setMensagemImportacao(
+                  `Dados apagados com sucesso. ${response.data?.materiaisDeletados || 0} material(is) removido(s).`,
+                );
+                await carregarMateriais();
+              } catch (e: any) {
+                console.error(e);
+                setErro(
+                  e.response?.data?.error || "Erro ao apagar dados. Verifique o backend.",
+                );
+              } finally {
+                setLoading(false);
+              }
+            }}
+            style={{
+              padding: "12px 24px",
+              background: "#ef4444",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "1rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
+            }}
+          >
+            🗑️ Limpar Todos os Dados (Teste)
+          </button>
+        </div>
+        <p style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: "12px" }}>
+          Esta ação remove todos os materiais e medições do banco de dados. Use apenas para limpar dados de teste antes de importar a lista real.
+        </p>
       </section>
         </>
       )}
