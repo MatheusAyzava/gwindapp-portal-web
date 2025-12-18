@@ -255,68 +255,104 @@ export function App() {
   async function registrarMedicao(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await axios.post(`${API_BASE_URL}/medicoes`, {
-        codigoItem: codigoItemMedicao,
-        quantidadeConsumida: Number(quantidadeMedida),
-        projeto: projetoMedicao || "PROJETO-TESTE",
-        torre: torreMedicao || null,
-        origem: "web",
-        dia,
-        semana,
-        cliente,
-        escala,
-        quantidadeTecnicos: qtdTecnicos ? Number(qtdTecnicos) : null,
-        tecnicoLider,
-        nomesTecnicos,
-        supervisor,
-        tipoIntervalo,
-        tipoAcesso,
-        pa,
-        plataforma,
-        equipe,
-        tipoHora,
-        quantidadeEventos: qtdEventos ? Number(qtdEventos) : null,
-        horaInicio,
-        horaFim,
-        tipoDano,
-        danoCodigo,
-        larguraDanoMm: larguraDano ? Number(larguraDano) : null,
-        comprimentoDanoMm: comprimentoDano ? Number(comprimentoDano) : null,
-        etapaProcesso,
-        etapaLixamento,
-        resinaTipo,
-        resinaQuantidade: resinaQuantidade
-          ? Number(resinaQuantidade)
-          : null,
-        resinaCatalisador,
-        resinaLote,
-        resinaValidade,
-        massaTipo,
-        massaQuantidade: massaQuantidade ? Number(massaQuantidade) : null,
-        massaCatalisador,
-        massaLote,
-        massaValidade,
-        nucleoTipo,
-        nucleoEspessuraMm: nucleoEspessura ? Number(nucleoEspessura) : null,
-        puTipo,
-        puMassaPeso: puMassaPeso ? Number(puMassaPeso) : null,
-        puCatalisadorPeso: puCatalisadorPeso
-          ? Number(puCatalisadorPeso)
-          : null,
-        puLote,
-        puValidade,
-        gelTipo,
-        gelPeso: gelPeso ? Number(gelPeso) : null,
-        gelCatalisadorPeso: gelCatalisadorPeso
-          ? Number(gelCatalisadorPeso)
-          : null,
-        gelLote,
-        gelValidade,
-        retrabalho: retrabalho === "Sim",
-      });
+      const projetoSelecionado = projetoMedicao || "PROJETO-TESTE";
 
-      setCodigoItemMedicao("");
-      setQuantidadeMedida("0");
+      // Consumir materiais automaticamente pelos campos do formulário
+      const consumos: Array<{ tipo: string; nome: string; quantidade: number }> = [];
+      const qResina = Number(resinaQuantidade || 0);
+      const qMassa = Number(massaQuantidade || 0);
+      const qPU = Number(puMassaPeso || 0);
+      const qGel = Number(gelPeso || 0);
+
+      if (resinaTipo && qResina > 0) consumos.push({ tipo: "Resina", nome: resinaTipo, quantidade: qResina });
+      if (massaTipo && qMassa > 0) consumos.push({ tipo: "Massa", nome: massaTipo, quantidade: qMassa });
+      if (puTipo && qPU > 0) consumos.push({ tipo: "PU", nome: puTipo, quantidade: qPU });
+      if (gelTipo && qGel > 0) consumos.push({ tipo: "Gel", nome: gelTipo, quantidade: qGel });
+
+      if (consumos.length === 0) {
+        setErro("Preencha pelo menos um consumo (Resina/Massa/PU/Gel) com quantidade > 0.");
+        return;
+      }
+
+      const normalizar = (s: string) =>
+        s
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
+
+      const encontrarMaterial = (nome: string) => {
+        const n = normalizar(nome);
+        const candidatosProjeto = materiais.filter((m) => (m.codigoProjeto || "") === projetoSelecionado);
+        const candidatos = (candidatosProjeto.length > 0 ? candidatosProjeto : materiais).filter((m) => {
+          const desc = normalizar(m.descricao || "");
+          return desc.includes(n);
+        });
+        return candidatos[0] || null;
+      };
+
+      for (const c of consumos) {
+        const material = encontrarMaterial(c.nome);
+        if (!material) {
+          setErro(`Não encontrei no estoque um material para "${c.tipo}: ${c.nome}" no projeto "${projetoSelecionado}". Cadastre/import e tente novamente.`);
+          return;
+        }
+
+        await axios.post(`${API_BASE_URL}/medicoes`, {
+          codigoItem: material.codigoItem,
+          quantidadeConsumida: Number(c.quantidade),
+          projeto: projetoSelecionado,
+          torre: torreMedicao || null,
+          origem: "web",
+          dia,
+          semana,
+          cliente,
+          escala,
+          quantidadeTecnicos: qtdTecnicos ? Number(qtdTecnicos) : null,
+          tecnicoLider,
+          nomesTecnicos,
+          supervisor,
+          tipoIntervalo,
+          tipoAcesso,
+          pa,
+          plataforma,
+          equipe,
+          tipoHora,
+          quantidadeEventos: qtdEventos ? Number(qtdEventos) : null,
+          horaInicio,
+          horaFim,
+          tipoDano,
+          danoCodigo,
+          larguraDanoMm: larguraDano ? Number(larguraDano) : null,
+          comprimentoDanoMm: comprimentoDano ? Number(comprimentoDano) : null,
+          etapaProcesso,
+          etapaLixamento,
+          resinaTipo,
+          resinaQuantidade: resinaQuantidade ? Number(resinaQuantidade) : null,
+          resinaCatalisador,
+          resinaLote,
+          resinaValidade,
+          massaTipo,
+          massaQuantidade: massaQuantidade ? Number(massaQuantidade) : null,
+          massaCatalisador,
+          massaLote,
+          massaValidade,
+          nucleoTipo,
+          nucleoEspessuraMm: nucleoEspessura ? Number(nucleoEspessura) : null,
+          puTipo,
+          puMassaPeso: puMassaPeso ? Number(puMassaPeso) : null,
+          puCatalisadorPeso: puCatalisadorPeso ? Number(puCatalisadorPeso) : null,
+          puLote,
+          puValidade,
+          gelTipo,
+          gelPeso: gelPeso ? Number(gelPeso) : null,
+          gelCatalisadorPeso: gelCatalisadorPeso ? Number(gelCatalisadorPeso) : null,
+          gelLote,
+          gelValidade,
+          retrabalho: retrabalho === "Sim",
+        });
+      }
+
       setProjetoMedicao("");
       setTorreMedicao("");
       setDia("");
@@ -1683,52 +1719,10 @@ export function App() {
               marginBottom: "16px",
               textTransform: "uppercase",
               letterSpacing: "0.5px"
-            }}>Material e Quantidade</h3>
-            <div className="form-row" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Nº do item (código do estoque) *</span>
-                <select
-                  value={codigoItemMedicao}
-                  onChange={(e) => setCodigoItemMedicao(e.target.value)}
-                  required
-                  style={{
-                    padding: "12px",
-                    borderRadius: "8px",
-                    border: "1px solid #d1d5db",
-                    fontSize: "0.875rem",
-                    background: "#ffffff",
-                    color: "#1f2937",
-                    width: "100%",
-                  }}
-                >
-                  <option value="">Selecione um material...</option>
-                  {materiais.map((m) => (
-                    <option key={m.id} value={m.codigoItem}>
-                      {m.codigoItem} - {m.descricao} (Estoque: {m.estoqueAtual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {m.unidade})
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#374151" }}>Quantidade consumida (sai do estoque) *</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={quantidadeMedida}
-                  onChange={(e) => setQuantidadeMedida(e.target.value)}
-                  required
-                  placeholder="0"
-                  style={{
-                    padding: "12px",
-                    borderRadius: "8px",
-                    border: "1px solid #d1d5db",
-                    fontSize: "0.875rem",
-                    width: "100%",
-                  }}
-                />
-              </label>
-            </div>
+            }}>Consumo de Materiais</h3>
+            <p style={{ margin: 0, color: "#6b7280", fontSize: 14 }}>
+              O desconto do estoque é feito automaticamente pelos campos do formulário (Resina, Massa, PU e Gel).
+            </p>
           </div>
 
           <hr style={{ borderColor: "#e5e7eb", margin: "24px 0", borderWidth: "1px" }} />
