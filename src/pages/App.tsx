@@ -41,6 +41,53 @@ type MedicaoGrid = {
   criadoEm: string; // m.data
 };
 
+type MedicaoSmartsheetRow = {
+  id: number;
+  data: string;
+  dia: string | null;
+  semana: string | null;
+  cliente: string | null;
+  projeto: string;
+  escala: string | null;
+  tecnicoLider: string | null;
+  quantidadeTecnicos: number | null;
+  nomesTecnicos: string | null;
+  supervisor: string | null;
+  tipoIntervalo: string | null;
+  tipoAcesso: string | null;
+  pa: string | null;
+  torre: string | null;
+  plataforma: string | null;
+  equipe: string | null;
+  tipoHora: string | null;
+  quantidadeEventos: number | null;
+  horaInicio: string | null;
+  horaFim: string | null;
+  tipoDano: string | null;
+  danoCodigo: string | null;
+  larguraDanoMm: number | null;
+  comprimentoDanoMm: number | null;
+  etapaProcesso: string | null;
+  etapaLixamento: string | null;
+  resinaTipo: string | null;
+  resinaQuantidade: number | null;
+  massaTipo: string | null;
+  massaQuantidade: number | null;
+  nucleoTipo: string | null;
+  nucleoEspessuraMm: number | null;
+  puTipo: string | null;
+  puMassaPeso: number | null;
+  gelTipo: string | null;
+  gelPeso: number | null;
+  retrabalho: boolean | null;
+
+  // Consumo (item descontado)
+  itemCodigo: string;
+  itemDescricao: string;
+  itemUnidade: string;
+  quantidadeConsumida: number;
+};
+
 // Backend principal do portal roda na porta 4001 (para não conflitar com o servidor de passagens).
 // Usa variável de ambiente se disponível, senão usa localhost
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || "http://localhost:4001";
@@ -144,6 +191,7 @@ export function App() {
   const [mostrarSomenteNoEstoque, setMostrarSomenteNoEstoque] = useState(true);
 
   const [medicoes, setMedicoes] = useState<MedicaoGrid[]>([]);
+  const [medicoesSmartsheet, setMedicoesSmartsheet] = useState<MedicaoSmartsheetRow[]>([]);
   const [aba, setAba] = useState<"apontamento" | "materiais">("apontamento");
   const [modulo, setModulo] = useState<"home" | "materiais" | "passagens">(
     "home",
@@ -368,6 +416,53 @@ export function App() {
         criadoEm: m.data,
       }));
       setMedicoes(linhas);
+
+      const linhasSmartsheet: MedicaoSmartsheetRow[] = resposta.data.map((m) => ({
+        id: m.id,
+        data: m.data,
+        dia: m.dia,
+        semana: m.semana,
+        cliente: m.cliente,
+        projeto: m.projeto,
+        escala: m.escala,
+        tecnicoLider: m.tecnicoLider,
+        quantidadeTecnicos: m.quantidadeTecnicos,
+        nomesTecnicos: m.nomesTecnicos,
+        supervisor: m.supervisor ?? null,
+        tipoIntervalo: m.tipoIntervalo ?? null,
+        tipoAcesso: m.tipoAcesso ?? null,
+        pa: m.pa ?? null,
+        torre: m.torre ?? null,
+        plataforma: m.plataforma ?? null,
+        equipe: m.equipe ?? null,
+        tipoHora: m.tipoHora ?? null,
+        quantidadeEventos: m.quantidadeEventos ?? null,
+        horaInicio: m.horaInicio ?? null,
+        horaFim: m.horaFim ?? null,
+        tipoDano: m.tipoDano ?? null,
+        danoCodigo: m.danoCodigo ?? null,
+        larguraDanoMm: m.larguraDanoMm ?? null,
+        comprimentoDanoMm: m.comprimentoDanoMm ?? null,
+        etapaProcesso: m.etapaProcesso ?? null,
+        etapaLixamento: m.etapaLixamento ?? null,
+        resinaTipo: m.resinaTipo ?? null,
+        resinaQuantidade: m.resinaQuantidade ?? null,
+        massaTipo: m.massaTipo ?? null,
+        massaQuantidade: m.massaQuantidade ?? null,
+        nucleoTipo: m.nucleoTipo ?? null,
+        nucleoEspessuraMm: m.nucleoEspessuraMm ?? null,
+        puTipo: m.puTipo ?? null,
+        puMassaPeso: m.puMassaPeso ?? null,
+        gelTipo: m.gelTipo ?? null,
+        gelPeso: m.gelPeso ?? null,
+        retrabalho: m.retrabalho ?? null,
+
+        itemCodigo: m.material?.codigoItem ?? "",
+        itemDescricao: m.material?.descricao ?? "",
+        itemUnidade: m.material?.unidade ?? "",
+        quantidadeConsumida: Number(m.quantidadeConsumida ?? 0),
+      }));
+      setMedicoesSmartsheet(linhasSmartsheet);
     } catch (e) {
       console.error(e);
     }
@@ -1655,6 +1750,123 @@ export function App() {
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="card">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
+          <div>
+            <h2 style={{ margin: 0 }}>Registro Geral (tipo Smartsheet)</h2>
+            <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 14 }}>
+              Visão completa com todas as colunas principais do apontamento.
+            </p>
+          </div>
+          <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+            {medicoesSmartsheet.length} linha(s)
+          </span>
+        </div>
+
+        {medicoesSmartsheet.length === 0 ? (
+          <p style={{ color: "#6b7280" }}>Nenhum registro ainda.</p>
+        ) : (
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table className="table" style={{ width: "100%", minWidth: "1800px", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Data/Hora</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Dia</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Semana</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Cliente</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Projeto</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Escala</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Técnico Líder</th>
+                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Técn.</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Nome dos Técnicos</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Supervisor</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo Intervalo</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo Acesso</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Pá</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>WTG/Torre</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Plataforma</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Equipe</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo de Hora</th>
+                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Eventos</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Hora Início</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Hora Fim</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Tipo de Dano</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Dano</th>
+                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Largura (mm)</th>
+                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Comprimento (mm)</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Etapa Processo</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Etapa Lixamento</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Resina</th>
+                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Resina</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Massa</th>
+                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd Massa</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Núcleo</th>
+                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Esp. Núcleo (mm)</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>PU</th>
+                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Peso PU</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Gel</th>
+                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Peso Gel</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Retrabalho?</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Item (código)</th>
+                  <th style={{ padding: "10px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Item (descrição)</th>
+                  <th style={{ padding: "10px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd consumida</th>
+                  <th style={{ padding: "10px", textAlign: "center", fontWeight: 600, color: "#374151" }}>Unid.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {medicoesSmartsheet.map((m) => (
+                  <tr key={`sm-${m.id}`} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                    <td style={{ padding: "10px", whiteSpace: "nowrap" }}>{m.data ? new Date(m.data).toLocaleString("pt-BR") : "—"}</td>
+                    <td style={{ padding: "10px", whiteSpace: "nowrap" }}>{m.dia ? new Date(m.dia).toLocaleDateString("pt-BR") : "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.semana || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.cliente || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.projeto || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.escala || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.tecnicoLider || "—"}</td>
+                    <td style={{ padding: "10px", textAlign: "right" }}>{m.quantidadeTecnicos ?? "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.nomesTecnicos || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.supervisor || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.tipoIntervalo || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.tipoAcesso || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.pa || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.torre || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.plataforma || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.equipe || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.tipoHora || "—"}</td>
+                    <td style={{ padding: "10px", textAlign: "right" }}>{m.quantidadeEventos ?? "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.horaInicio || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.horaFim || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.tipoDano || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.danoCodigo || "—"}</td>
+                    <td style={{ padding: "10px", textAlign: "right" }}>{m.larguraDanoMm ?? "—"}</td>
+                    <td style={{ padding: "10px", textAlign: "right" }}>{m.comprimentoDanoMm ?? "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.etapaProcesso || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.etapaLixamento || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.resinaTipo || "—"}</td>
+                    <td style={{ padding: "10px", textAlign: "right" }}>{m.resinaQuantidade ?? "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.massaTipo || "—"}</td>
+                    <td style={{ padding: "10px", textAlign: "right" }}>{m.massaQuantidade ?? "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.nucleoTipo || "—"}</td>
+                    <td style={{ padding: "10px", textAlign: "right" }}>{m.nucleoEspessuraMm ?? "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.puTipo || "—"}</td>
+                    <td style={{ padding: "10px", textAlign: "right" }}>{m.puMassaPeso ?? "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.gelTipo || "—"}</td>
+                    <td style={{ padding: "10px", textAlign: "right" }}>{m.gelPeso ?? "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.retrabalho === null ? "—" : m.retrabalho ? "Sim" : "Não"}</td>
+                    <td style={{ padding: "10px", whiteSpace: "nowrap", fontWeight: 600 }}>{m.itemCodigo || "—"}</td>
+                    <td style={{ padding: "10px" }}>{m.itemDescricao || "—"}</td>
+                    <td style={{ padding: "10px", textAlign: "right", fontWeight: 600 }}>
+                      {Number(m.quantidadeConsumida || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: "10px", textAlign: "center" }}>{m.itemUnidade || "—"}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
