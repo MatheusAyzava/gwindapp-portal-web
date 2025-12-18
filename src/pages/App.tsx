@@ -47,6 +47,14 @@ export function App() {
   const [buscaEstoque, setBuscaEstoque] = useState("");
   const [filtroProjeto, setFiltroProjeto] = useState("");
 
+  // Edição/remoção de material (tela de estoque)
+  const [materialEditando, setMaterialEditando] = useState<Material | null>(null);
+  const [editDescricao, setEditDescricao] = useState("");
+  const [editUnidade, setEditUnidade] = useState("");
+  const [editEstoqueInicial, setEditEstoqueInicial] = useState("0");
+  const [editEstoqueAtual, setEditEstoqueAtual] = useState("0");
+  const [editandoSalvando, setEditandoSalvando] = useState(false);
+
   const [codigoItem, setCodigoItem] = useState("");
   const [descricao, setDescricao] = useState("");
   const [unidade, setUnidade] = useState("KG");
@@ -142,6 +150,59 @@ export function App() {
     carregarMateriais();
     carregarMedicoes();
   }, []);
+
+  const abrirEdicaoMaterial = (m: Material) => {
+    setMaterialEditando(m);
+    setEditDescricao(m.descricao || "");
+    setEditUnidade(m.unidade || "");
+    setEditEstoqueInicial(String(m.estoqueInicial ?? 0));
+    setEditEstoqueAtual(String(m.estoqueAtual ?? 0));
+  };
+
+  const fecharEdicaoMaterial = () => {
+    setMaterialEditando(null);
+    setEditDescricao("");
+    setEditUnidade("");
+    setEditEstoqueInicial("0");
+    setEditEstoqueAtual("0");
+  };
+
+  const salvarEdicaoMaterial = async () => {
+    if (!materialEditando) return;
+    setEditandoSalvando(true);
+    setErro(null);
+    try {
+      const payload = {
+        descricao: editDescricao,
+        unidade: editUnidade,
+        estoqueInicial: Number(editEstoqueInicial || 0),
+        estoqueAtual: Number(editEstoqueAtual || 0),
+      };
+      const resp = await axios.put(`${API_BASE_URL}/materiais/${materialEditando.id}`, payload);
+      const atualizado: Material = resp.data;
+      setMateriais((prev) => prev.map((x) => (x.id === atualizado.id ? atualizado : x)));
+      fecharEdicaoMaterial();
+    } catch (e: any) {
+      console.error(e);
+      setErro(e?.response?.data?.error || "Erro ao salvar edição do material.");
+    } finally {
+      setEditandoSalvando(false);
+    }
+  };
+
+  const removerMaterial = async (m: Material) => {
+    const nome = `${m.codigoItem} - ${m.descricao}${m.codigoProjeto ? ` (${m.codigoProjeto})` : ""}`;
+    const ok = window.confirm(`Tem certeza que deseja remover este material?\n\n${nome}\n\nEssa ação é irreversível.`);
+    if (!ok) return;
+    setErro(null);
+    try {
+      await axios.delete(`${API_BASE_URL}/materiais/${m.id}`);
+      setMateriais((prev) => prev.filter((x) => x.id !== m.id));
+    } catch (e: any) {
+      console.error(e);
+      setErro(e?.response?.data?.error || "Erro ao remover material.");
+    }
+  };
 
   async function carregarMateriais() {
     try {
@@ -1249,6 +1310,7 @@ export function App() {
                   <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Estoque inicial</th>
                   <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Estoque atual</th>
                   <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Status</th>
+                  <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -1313,6 +1375,32 @@ export function App() {
                             {percentual.toFixed(0)}%
                           </span>
                         </td>
+                        <td style={{ padding: "12px", textAlign: "right" }}>
+                          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", flexWrap: "wrap" }}>
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              onClick={() => abrirEdicaoMaterial(m)}
+                              style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              onClick={() => removerMaterial(m)}
+                              style={{
+                                padding: "6px 10px",
+                                fontSize: "0.85rem",
+                                borderColor: "#fecaca",
+                                color: "#b91c1c",
+                                background: "#fff1f2",
+                              }}
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -1321,6 +1409,84 @@ export function App() {
           </div>
         )}
       </section>
+
+      {/* Modal simples de edição */}
+      {materialEditando && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            zIndex: 50,
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) fecharEdicaoMaterial();
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              width: "min(680px, 100%)",
+              maxHeight: "85vh",
+              overflow: "auto",
+              boxShadow: "0 25px 60px rgba(0,0,0,0.25)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center" }}>
+              <h2 style={{ margin: 0 }}>Editar material</h2>
+              <button type="button" className="secondary-button" onClick={fecharEdicaoMaterial}>
+                Fechar
+              </button>
+            </div>
+
+            <p style={{ marginTop: "8px", color: "#6b7280", fontSize: 14 }}>
+              {materialEditando.codigoItem} {materialEditando.codigoProjeto ? `• ${materialEditando.codigoProjeto}` : ""}
+            </p>
+
+            <div className="form-row" style={{ marginTop: "12px" }}>
+              <label>
+                Descrição
+                <input value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} />
+              </label>
+              <label>
+                Unidade
+                <input value={editUnidade} onChange={(e) => setEditUnidade(e.target.value)} />
+              </label>
+              <label>
+                Estoque inicial
+                <input
+                  inputMode="decimal"
+                  value={editEstoqueInicial}
+                  onChange={(e) => setEditEstoqueInicial(e.target.value)}
+                />
+              </label>
+              <label>
+                Estoque atual
+                <input
+                  inputMode="decimal"
+                  value={editEstoqueAtual}
+                  onChange={(e) => setEditEstoqueAtual(e.target.value)}
+                />
+              </label>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "16px" }}>
+              <button type="button" className="secondary-button" onClick={fecharEdicaoMaterial} disabled={editandoSalvando}>
+                Cancelar
+              </button>
+              <button type="button" className="primary-button" onClick={salvarEdicaoMaterial} disabled={editandoSalvando}>
+                {editandoSalvando ? "Salvando..." : "Salvar alterações"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
       <section className="card">
