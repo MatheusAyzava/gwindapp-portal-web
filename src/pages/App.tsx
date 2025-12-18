@@ -243,6 +243,35 @@ export function App() {
     "SIKA BIRESIN CR910 (B) - 2KG",
   ];
 
+  const opcoesFixasComStatus = (codigoProjeto: string, descricoes: string[]) => {
+    const base = materiaisDoProjetoSelecionado(codigoProjeto);
+    const limparDescEstoque = (s: string) =>
+      normalizarTexto((s || "").replace(/^\s*\d+\s*[-–]\s*/g, "")).replace(/\s+/g, " ").trim();
+
+    const tokens = (s: string) => limparDescEstoque(s).split(" ").filter((x) => x.length >= 3);
+
+    return descricoes.map((desc) => {
+      const alvo = limparDescEstoque(desc);
+      const alvoTokens = tokens(desc);
+      const match =
+        base.find((m) => limparDescEstoque(m.descricao || "") === alvo) ||
+        base.find((m) => limparDescEstoque(m.descricao || "").includes(alvo)) ||
+        base.find((m) => alvo.includes(limparDescEstoque(m.descricao || ""))) ||
+        base.find((m) => {
+          const d = tokens(m.descricao || "");
+          const ok = alvoTokens.filter((t) => d.includes(t)).length;
+          return ok >= Math.min(2, alvoTokens.length);
+        }) ||
+        null;
+
+      return {
+        descricao: desc,
+        codigoItem: match?.codigoItem || "",
+        encontrado: Boolean(match),
+      };
+    });
+  };
+
   const abrirEdicaoMaterial = (m: Material) => {
     setMaterialEditando(m);
     setEditDescricao(m.descricao || "");
@@ -2262,9 +2291,14 @@ export function App() {
                     }}
                   >
                     <option value="">Selecione...</option>
-                    {opcoesFixasPorDescricao(projetoMedicao || "", LISTA_RESINA).map((m) => (
-                      <option key={`resina-${m.id}`} value={m.codigoItem}>
-                        {m.descricao}
+                    {opcoesFixasComStatus(projetoMedicao || "", LISTA_RESINA).map((o) => (
+                      <option
+                        key={`resina-${o.descricao}`}
+                        value={o.codigoItem || ""}
+                        disabled={!o.encontrado}
+                      >
+                        {o.descricao}
+                        {!o.encontrado ? " (não encontrado no estoque)" : ""}
                       </option>
                     ))}
                   </select>
@@ -2514,9 +2548,14 @@ export function App() {
                     }}
                   >
                     <option value="">Selecione...</option>
-                    {opcoesFixasPorDescricao(projetoMedicao || "", LISTA_GEL).map((m) => (
-                      <option key={`gel-${m.id}`} value={m.codigoItem}>
-                        {m.descricao}
+                    {opcoesFixasComStatus(projetoMedicao || "", LISTA_GEL).map((o) => (
+                      <option
+                        key={`gel-${o.descricao}`}
+                        value={o.codigoItem || ""}
+                        disabled={!o.encontrado}
+                      >
+                        {o.descricao}
+                        {!o.encontrado ? " (não encontrado no estoque)" : ""}
                       </option>
                     ))}
                   </select>
