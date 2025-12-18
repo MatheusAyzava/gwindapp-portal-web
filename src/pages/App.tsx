@@ -381,12 +381,16 @@ export function App() {
   async function carregarMateriais() {
     try {
       setLoading(true);
-      const resposta = await axios.get<Material[]>(`${API_BASE_URL}/materiais`);
+      const resposta = await axios.get<Material[]>(`${API_BASE_URL}/materiais`, { timeout: 20000 });
       setMateriais(resposta.data);
       setErro(null);
     } catch (e) {
       console.error(e);
-      setErro("Erro ao carregar materiais.");
+      const msg =
+        (e as any)?.response?.data?.error ||
+        (e as any)?.message ||
+        "Erro ao carregar materiais.";
+      setErro(`Erro ao carregar materiais: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -394,7 +398,7 @@ export function App() {
 
   async function carregarMedicoes() {
     try {
-      const resposta = await axios.get<any[]>(`${API_BASE_URL}/medicoes`);
+      const resposta = await axios.get<any[]>(`${API_BASE_URL}/medicoes`, { timeout: 20000 });
       const linhas: MedicaoGrid[] = resposta.data.map((m) => ({
         id: m.id,
         dia: m.dia,
@@ -465,6 +469,12 @@ export function App() {
       setMedicoesSmartsheet(linhasSmartsheet);
     } catch (e) {
       console.error(e);
+      // Não bloqueia a tela inteira, mas ajuda a diagnosticar no mobile
+      const msg =
+        (e as any)?.response?.data?.error ||
+        (e as any)?.message ||
+        "Erro ao carregar medições.";
+      setErro((prev) => prev || `Erro ao carregar medições: ${msg}`);
     }
   }
 
@@ -1565,6 +1575,9 @@ export function App() {
             </span>
           </div>
         </div>
+        <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 0 }}>
+          API: {API_BASE_URL}
+        </p>
         {loading && <p>Carregando...</p>}
         {erro && <p className="error">{erro}</p>}
         {!loading && materiais.length === 0 && <p>Nenhum material cadastrado.</p>}
