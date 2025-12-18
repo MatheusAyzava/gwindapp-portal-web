@@ -34,6 +34,11 @@ type MedicaoGrid = {
   horaInicio: string | null;
   horaFim: string | null;
   codigoItem: string; // virá de material
+  descricaoMaterial: string;
+  unidadeMaterial: string;
+  quantidadeConsumida: number;
+  torre: string | null;
+  criadoEm: string; // m.data
 };
 
 // Backend principal do portal roda na porta 4001 (para não conflitar com o servidor de passagens).
@@ -235,6 +240,11 @@ export function App() {
         horaInicio: m.horaInicio,
         horaFim: m.horaFim,
         codigoItem: m.material?.codigoItem ?? "",
+        descricaoMaterial: m.material?.descricao ?? "",
+        unidadeMaterial: m.material?.unidade ?? "",
+        quantidadeConsumida: Number(m.quantidadeConsumida ?? 0),
+        torre: m.torre ?? null,
+        criadoEm: m.data,
       }));
       setMedicoes(linhas);
     } catch (e) {
@@ -1411,6 +1421,68 @@ export function App() {
                       </tr>
                     );
                   })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="card">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
+          <div>
+            <h2 style={{ margin: 0 }}>Registro de Apontamentos</h2>
+            <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 14 }}>
+              Histórico de tudo que foi apontado (quem fez, o que gastou e onde).
+            </p>
+          </div>
+          <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+            {medicoes.length} registro(s)
+          </span>
+        </div>
+
+        {medicoes.length === 0 ? (
+          <p style={{ color: "#6b7280" }}>Nenhum apontamento registrado ainda.</p>
+        ) : (
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table className="table" style={{ width: "100%", minWidth: "1100px", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
+                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Data/Hora</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Quem fez</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Projeto</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Item</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Descrição</th>
+                  <th style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#374151" }}>Qtd. consumida</th>
+                  <th style={{ padding: "12px", textAlign: "center", fontWeight: 600, color: "#374151" }}>Unid.</th>
+                  <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>WTG / Torre</th>
+                </tr>
+              </thead>
+              <tbody>
+                {medicoes.map((m) => {
+                  const quem = (m.tecnicoLider || "").trim() || (m.nomesTecnicos || "").trim() || "—";
+                  const dataStr = m.criadoEm ? new Date(m.criadoEm).toLocaleString("pt-BR") : "—";
+                  return (
+                    <tr key={m.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                      <td style={{ padding: "12px", color: "#374151", whiteSpace: "nowrap" }}>{dataStr}</td>
+                      <td style={{ padding: "12px", color: "#374151" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <span style={{ fontWeight: 600, color: "#111827" }}>{quem}</span>
+                          {m.nomesTecnicos && m.nomesTecnicos !== m.tecnicoLider ? (
+                            <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>{m.nomesTecnicos}</span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td style={{ padding: "12px", color: "#374151" }}>{m.projeto || "—"}</td>
+                      <td style={{ padding: "12px", fontWeight: 600, color: "#1f2937", whiteSpace: "nowrap" }}>{m.codigoItem || "—"}</td>
+                      <td style={{ padding: "12px", color: "#374151" }}>{m.descricaoMaterial || "—"}</td>
+                      <td style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: "#1f2937", whiteSpace: "nowrap" }}>
+                        {Number(m.quantidadeConsumida || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td style={{ padding: "12px", textAlign: "center", color: "#6b7280", whiteSpace: "nowrap" }}>{m.unidadeMaterial || "—"}</td>
+                      <td style={{ padding: "12px", color: "#374151" }}>{m.torre || "—"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
