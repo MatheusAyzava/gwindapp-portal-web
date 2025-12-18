@@ -185,6 +185,43 @@ export function App() {
   const materialPorCodigo = (codigoItem: string) =>
     materiais.find((m) => m.codigoItem === codigoItem) || null;
 
+  const opcoesFixasPorDescricao = (codigoProjeto: string, descricoes: string[]) => {
+    const base = materiaisDoProjetoSelecionado(codigoProjeto);
+    const vistos = new Set<number>();
+    const result: Material[] = [];
+
+    for (const alvo of descricoes) {
+      const n = normalizarTexto(alvo);
+      const match =
+        base.find((m) => normalizarTexto(m.descricao || "") === n) ||
+        base.find((m) => normalizarTexto(m.descricao || "").includes(n));
+      if (match && !vistos.has(match.id)) {
+        vistos.add(match.id);
+        result.push(match);
+      }
+    }
+
+    return result;
+  };
+
+  const LISTA_GEL = [
+    "Mankiewicz - ALEXIT BladeRep Hardener 12",
+    "Mankiewicz - ALEXIT BladeRep Topcoat 12 - 3020",
+    "Mankiewicz - ALEXIT BladeRep Topcoat 12 - 7035",
+    "Mankiewicz - ALEXIT BladeRep Topcoat 12 - 9003",
+    "Mankiewicz - ALEXIT BladeRep Topcoat 12 - 9018",
+    "Mankiewicz - ALEXIT BR12T4 - BLADEREP THINNER 12 MEDIUM",
+  ];
+
+  const LISTA_RESINA = [
+    "ENDURECEDOR EPOXY LH635",
+    "RESINA EPOXY LR635",
+    "AMPREG30 RESIN 18KG A/F",
+    "AMPREG31 RESIN 18KG A/F",
+    "SIKA BIRESIN CR910 (A) - 10KG",
+    "SIKA BIRESIN CR910 (B) - 2KG",
+  ];
+
   const abrirEdicaoMaterial = (m: Material) => {
     setMaterialEditando(m);
     setEditDescricao(m.descricao || "");
@@ -2204,12 +2241,9 @@ export function App() {
                     }}
                   >
                     <option value="">Selecione...</option>
-                    {opcoesEstoquePorCategoria(
-                      projetoMedicao || "",
-                      ["resina", "epoxy", "endurecedor", "hardener", "ampreg", "biresin", "olin", "hexion"],
-                    ).map((m) => (
+                    {opcoesFixasPorDescricao(projetoMedicao || "", LISTA_RESINA).map((m) => (
                       <option key={`resina-${m.id}`} value={m.codigoItem}>
-                        {m.codigoItem} - {m.descricao}
+                        {m.descricao}
                       </option>
                     ))}
                   </select>
@@ -2459,12 +2493,9 @@ export function App() {
                     }}
                   >
                     <option value="">Selecione...</option>
-                    {opcoesEstoquePorCategoria(
-                      projetoMedicao || "",
-                      ["gel", "gelcoat"],
-                    ).map((m) => (
+                    {opcoesFixasPorDescricao(projetoMedicao || "", LISTA_GEL).map((m) => (
                       <option key={`gel-${m.id}`} value={m.codigoItem}>
-                        {m.codigoItem} - {m.descricao}
+                        {m.descricao}
                       </option>
                     ))}
                   </select>
