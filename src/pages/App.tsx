@@ -190,11 +190,32 @@ export function App() {
     const vistos = new Set<number>();
     const result: Material[] = [];
 
+    const limparDescEstoque = (s: string) => {
+      // remove prefixos comuns tipo "01 - ", "07 - ", "01 -", etc.
+      const t = (s || "").replace(/^\s*\d+\s*[-–]\s*/g, "");
+      return normalizarTexto(t).replace(/\s+/g, " ").trim();
+    };
+
+    const tokens = (s: string) =>
+      limparDescEstoque(s)
+        .split(" ")
+        .filter((x) => x.length >= 3);
+
     for (const alvo of descricoes) {
-      const n = normalizarTexto(alvo);
+      const n = limparDescEstoque(alvo);
+      const alvoTokens = tokens(alvo);
       const match =
-        base.find((m) => normalizarTexto(m.descricao || "") === n) ||
-        base.find((m) => normalizarTexto(m.descricao || "").includes(n));
+        // 1) match exato (já normalizado e sem prefixo)
+        base.find((m) => limparDescEstoque(m.descricao || "") === n) ||
+        // 2) contém em qualquer direção (para casos com complementos)
+        base.find((m) => limparDescEstoque(m.descricao || "").includes(n)) ||
+        base.find((m) => n.includes(limparDescEstoque(m.descricao || ""))) ||
+        // 3) match por tokens (exige pelo menos 2 tokens baterem)
+        base.find((m) => {
+          const d = tokens(m.descricao || "");
+          const ok = alvoTokens.filter((t) => d.includes(t)).length;
+          return ok >= Math.min(2, alvoTokens.length);
+        });
       if (match && !vistos.has(match.id)) {
         vistos.add(match.id);
         result.push(match);
