@@ -1299,8 +1299,15 @@ export function App() {
         {!loading && materiais.length === 0 && <p>Nenhum material cadastrado.</p>}
 
         {materiais.length > 0 && (
-          <div style={{ overflowX: "auto" }}>
-            <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table
+              className="table"
+              style={{
+                width: "100%",
+                minWidth: "980px",
+                borderCollapse: "collapse",
+              }}
+            >
               <thead>
                 <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
                   <th style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: "#374151" }}>Nº do item</th>
@@ -1329,7 +1336,7 @@ export function App() {
                     const statusCor = percentual > 50 ? "#10b981" : percentual > 20 ? "#f59e0b" : "#ef4444";
                     return (
                       <tr key={m.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                        <td style={{ padding: "12px", fontWeight: 600, color: "#1f2937" }}>{m.codigoItem}</td>
+                        <td style={{ padding: "12px", fontWeight: 600, color: "#1f2937", whiteSpace: "nowrap" }}>{m.codigoItem}</td>
                         <td style={{ padding: "12px", color: "#374151" }}>{m.descricao}</td>
                         <td style={{ padding: "12px", color: "#374151" }}>
                           {m.codigoProjeto ? (
@@ -1356,14 +1363,14 @@ export function App() {
                             <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>—</span>
                           )}
                         </td>
-                        <td style={{ padding: "12px", textAlign: "center", color: "#6b7280" }}>{m.unidade}</td>
-                        <td style={{ padding: "12px", textAlign: "right", color: "#6b7280" }}>
+                        <td style={{ padding: "12px", textAlign: "center", color: "#6b7280", whiteSpace: "nowrap" }}>{m.unidade}</td>
+                        <td style={{ padding: "12px", textAlign: "right", color: "#6b7280", whiteSpace: "nowrap" }}>
                           {m.estoqueInicial.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: m.estoqueAtual < 0 ? "#ef4444" : "#1f2937" }}>
+                        <td style={{ padding: "12px", textAlign: "right", fontWeight: 600, color: m.estoqueAtual < 0 ? "#ef4444" : "#1f2937", whiteSpace: "nowrap" }}>
                           {m.estoqueAtual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td style={{ padding: "12px", textAlign: "right" }}>
+                        <td style={{ padding: "12px", textAlign: "right", whiteSpace: "nowrap" }}>
                           <span style={{
                             padding: "4px 8px",
                             borderRadius: "4px",
@@ -1375,7 +1382,7 @@ export function App() {
                             {percentual.toFixed(0)}%
                           </span>
                         </td>
-                        <td style={{ padding: "12px", textAlign: "right" }}>
+                        <td style={{ padding: "12px", textAlign: "right", whiteSpace: "nowrap" }}>
                           <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", flexWrap: "wrap" }}>
                             <button
                               type="button"
