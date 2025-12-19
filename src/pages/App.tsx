@@ -2281,11 +2281,10 @@ export function App() {
                 setMensagemImportacao(
                   "Importação do Smartsheet concluída com sucesso.",
                 );
-              } catch (e) {
+              } catch (e: any) {
                 console.error(e);
-                setErro(
-                  "Erro ao importar materiais do Smartsheet. Verifique o backend.",
-                );
+                const mensagemErro = e?.response?.data?.mensagem || e?.response?.data?.error || "Erro ao importar materiais do Smartsheet.";
+                setErro(mensagemErro);
               } finally {
                 setLoading(false);
               }
