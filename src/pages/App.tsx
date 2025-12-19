@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import {
+  salvarApontamentoOffline,
+  listarApontamentosPendentes,
+  removerApontamentoOffline,
+  incrementarTentativas,
+  contarApontamentosPendentes,
+} from "../utils/offlineDB";
 
 type Material = {
   id: number;
@@ -101,6 +108,10 @@ export function App() {
   const [filtroStatusEstoque, setFiltroStatusEstoque] = useState<
     "" | "somente_100" | "acima_1" | "maior_0"
   >("");
+  
+  // Estados para funcionalidade offline
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [apontamentosPendentes, setApontamentosPendentes] = useState(0);
 
   // Edição/remoção de material (tela de estoque)
   const [materialEditando, setMaterialEditando] = useState<Material | null>(null);
@@ -208,7 +219,107 @@ export function App() {
   useEffect(() => {
     carregarMateriais();
     carregarMedicoes();
+    atualizarContadorPendentes();
   }, []);
+
+  // Detectar online/offline
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      sincronizarApontamentosPendentes();
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  // Registrar Service Worker
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((registration) => {
+          console.log("Service Worker registrado:", registration);
+        })
+        .catch((error) => {
+          console.error("Erro ao registrar Service Worker:", error);
+        });
+    }
+  }, []);
+
+  // Atualizar contador de apontamentos pendentes periodicamente
+  useEffect(() => {
+    const interval = setInterval(() => {
+      atualizarContadorPendentes();
+    }, 5000); // A cada 5 segundos
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Função para atualizar contador de pendentes
+  const atualizarContadorPendentes = async () => {
+    try {
+      const count = await contarApontamentosPendentes();
+      setApontamentosPendentes(count);
+    } catch (error) {
+      console.error("Erro ao contar apontamentos pendentes:", error);
+    }
+  };
+
+  // Função para sincronizar apontamentos pendentes quando voltar online
+  const sincronizarApontamentosPendentes = async () => {
+    if (!navigator.onLine) return;
+
+    try {
+      const pendentes = await listarApontamentosPendentes();
+      if (pendentes.length === 0) return;
+
+      console.log(`Sincronizando ${pendentes.length} apontamento(s) pendente(s)...`);
+
+      for (const apontamento of pendentes) {
+        try {
+          // Tentar enviar cada apontamento
+          const dados = apontamento.data;
+          
+          // Se for um array de consumos (múltiplos materiais), enviar cada um
+          if (Array.isArray(dados.consumos)) {
+            for (const consumo of dados.consumos) {
+              await axios.post(`${API_BASE_URL}/medicoes`, consumo);
+            }
+          } else {
+            await axios.post(`${API_BASE_URL}/medicoes`, dados);
+          }
+
+          // Remover do IndexedDB após sucesso
+          await removerApontamentoOffline(apontamento.id);
+          console.log(`Apontamento ${apontamento.id} sincronizado com sucesso.`);
+        } catch (error: any) {
+          console.error(`Erro ao sincronizar apontamento ${apontamento.id}:`, error);
+          
+          // Incrementar tentativas
+          await incrementarTentativas(apontamento.id);
+          
+          // Se já tentou muitas vezes, manter pendente (não remover)
+          if (apontamento.tentativas >= 5) {
+            console.warn(`Apontamento ${apontamento.id} excedeu tentativas máximas.`);
+          }
+        }
+      }
+
+      // Recarregar dados após sincronização
+      await carregarMateriais();
+      await carregarMedicoes();
+      await atualizarContadorPendentes();
+    } catch (error) {
+      console.error("Erro ao sincronizar apontamentos:", error);
+    }
+  };
 
   const normalizarTexto = (s: string) =>
     (s || "")
@@ -502,6 +613,92 @@ export function App() {
         return;
       }
 
+      // Preparar dados do apontamento (comum para online e offline)
+      const dadosComuns = {
+        projeto: projetoSelecionado,
+        torre: torreMedicao || null,
+        origem: "web",
+        dia,
+        semana,
+        cliente,
+        escala,
+        quantidadeTecnicos: qtdTecnicos ? Number(qtdTecnicos) : null,
+        tecnicoLider,
+        nomesTecnicos,
+        supervisor,
+        tipoIntervalo,
+        tipoAcesso,
+        pa,
+        plataforma,
+        equipe,
+        tipoHora,
+        quantidadeEventos: qtdEventos ? Number(qtdEventos) : null,
+        horaInicio,
+        horaFim,
+        tipoDano,
+        danoCodigo,
+        larguraDanoMm: larguraDano ? Number(larguraDano) : null,
+        comprimentoDanoMm: comprimentoDano ? Number(comprimentoDano) : null,
+        etapaProcesso,
+        etapaLixamento,
+        resinaTipo: resinaTipo ? materialPorCodigo(resinaTipo)?.descricao || null : null,
+        resinaQuantidade: resinaQuantidade ? Number(resinaQuantidade) : null,
+        resinaCatalisador,
+        resinaLote,
+        resinaValidade,
+        massaTipo: massaTipo ? materialPorCodigo(massaTipo)?.descricao || null : null,
+        massaQuantidade: massaQuantidade ? Number(massaQuantidade) : null,
+        massaCatalisador,
+        massaLote,
+        massaValidade,
+        nucleoTipo,
+        nucleoEspessuraMm: nucleoEspessura ? Number(nucleoEspessura) : null,
+        puTipo: puTipo ? materialPorCodigo(puTipo)?.descricao || null : null,
+        puMassaPeso: puMassaPeso ? Number(puMassaPeso) : null,
+        puCatalisadorPeso: puCatalisadorPeso ? Number(puCatalisadorPeso) : null,
+        puLote,
+        puValidade,
+        gelTipo: gelTipo ? materialPorCodigo(gelTipo)?.descricao || null : null,
+        gelPeso: gelPeso ? Number(gelPeso) : null,
+        gelCatalisadorPeso: gelCatalisadorPeso ? Number(gelCatalisadorPeso) : null,
+        gelLote,
+        gelValidade,
+        retrabalho: retrabalho === "Sim",
+      };
+
+      // Verificar se está online
+      const online = navigator.onLine;
+
+      if (!online) {
+        // Modo offline: salvar no IndexedDB
+        for (const c of consumos) {
+          const material = materialPorCodigo(c.codigoItem);
+          if (!material) {
+            setErro(`Não encontrei no estoque o Nº do item "${c.codigoItem}" para "${c.tipo}".`);
+            return;
+          }
+
+          const dadosApontamento = {
+            codigoItem: material.codigoItem,
+            quantidadeConsumida: Number(c.quantidade),
+            ...dadosComuns,
+          };
+
+          await salvarApontamentoOffline(dadosApontamento);
+        }
+
+        setErro(null);
+        setMensagemImportacao(
+          `✅ Apontamento salvo offline! ${consumos.length} material(is) serão sincronizados quando voltar a conexão.`
+        );
+        await atualizarContadorPendentes();
+        
+        // Limpar formulário
+        limparFormularioMedicao();
+        return;
+      }
+
+      // Modo online: enviar normalmente
       for (const c of consumos) {
         const material = materialPorCodigo(c.codigoItem);
         if (!material) {
@@ -512,116 +709,168 @@ export function App() {
         await axios.post(`${API_BASE_URL}/medicoes`, {
           codigoItem: material.codigoItem,
           quantidadeConsumida: Number(c.quantidade),
-          projeto: projetoSelecionado,
-          torre: torreMedicao || null,
-          origem: "web",
-          dia,
-          semana,
-          cliente,
-          escala,
-          quantidadeTecnicos: qtdTecnicos ? Number(qtdTecnicos) : null,
-          tecnicoLider,
-          nomesTecnicos,
-          supervisor,
-          tipoIntervalo,
-          tipoAcesso,
-          pa,
-          plataforma,
-          equipe,
-          tipoHora,
-          quantidadeEventos: qtdEventos ? Number(qtdEventos) : null,
-          horaInicio,
-          horaFim,
-          tipoDano,
-          danoCodigo,
-          larguraDanoMm: larguraDano ? Number(larguraDano) : null,
-          comprimentoDanoMm: comprimentoDano ? Number(comprimentoDano) : null,
-          etapaProcesso,
-          etapaLixamento,
-          // Guardar no registro o nome (descrição) do estoque, e não apenas o código
-          resinaTipo: resinaTipo ? materialPorCodigo(resinaTipo)?.descricao || null : null,
-          resinaQuantidade: resinaQuantidade ? Number(resinaQuantidade) : null,
-          resinaCatalisador,
-          resinaLote,
-          resinaValidade,
-          massaTipo: massaTipo ? materialPorCodigo(massaTipo)?.descricao || null : null,
-          massaQuantidade: massaQuantidade ? Number(massaQuantidade) : null,
-          massaCatalisador,
-          massaLote,
-          massaValidade,
-          nucleoTipo,
-          nucleoEspessuraMm: nucleoEspessura ? Number(nucleoEspessura) : null,
-          puTipo: puTipo ? materialPorCodigo(puTipo)?.descricao || null : null,
-          puMassaPeso: puMassaPeso ? Number(puMassaPeso) : null,
-          puCatalisadorPeso: puCatalisadorPeso ? Number(puCatalisadorPeso) : null,
-          puLote,
-          puValidade,
-          gelTipo: gelTipo ? materialPorCodigo(gelTipo)?.descricao || null : null,
-          gelPeso: gelPeso ? Number(gelPeso) : null,
-          gelCatalisadorPeso: gelCatalisadorPeso ? Number(gelCatalisadorPeso) : null,
-          gelLote,
-          gelValidade,
-          retrabalho: retrabalho === "Sim",
+          ...dadosComuns,
         });
       }
 
-      setProjetoMedicao("");
-      setTorreMedicao("");
-      setDia("");
-      setSemana("");
-      setCliente("");
-      setEscala("");
-      setQtdTecnicos("");
-      setTecnicoLider("");
-      setNomesTecnicos("");
-      setSupervisor("");
-      setTipoIntervalo("");
-      setTipoAcesso("");
-      setPa("");
-      setPlataforma("");
-      setEquipe("");
-      setTipoHora("");
-      setQtdEventos("");
-      setHoraInicio("");
-      setHoraFim("");
-      setTipoDano("");
-      setDanoCodigo("");
-      setLarguraDano("");
-      setComprimentoDano("");
-      setEtapaProcesso("");
-      setEtapaLixamento("");
-      setResinaTipo("");
-      setResinaQuantidade("");
-      setResinaCatalisador("");
-      setResinaLote("");
-      setResinaValidade("");
-      setMassaTipo("");
-      setMassaQuantidade("");
-      setMassaCatalisador("");
-      setMassaLote("");
-      setMassaValidade("");
-      setNucleoTipo("");
-      setNucleoEspessura("");
-      setPuTipo("");
-      setPuMassaPeso("");
-      setPuCatalisadorPeso("");
-      setPuLote("");
-      setPuValidade("");
-      setGelTipo("");
-      setGelPeso("");
-      setGelCatalisadorPeso("");
-      setGelLote("");
-      setGelValidade("");
-      setRetrabalho("");
+      setErro(null);
+      setMensagemImportacao("✅ Apontamento registrado com sucesso!");
+      
+      // Limpar formulário
+      limparFormularioMedicao();
 
       await carregarMateriais();
       await carregarMedicoes();
-      setErro(null);
     } catch (e) {
       console.error(e);
+      
+      // Se der erro de rede, tentar salvar offline
+      if ((e as any)?.code === "ERR_NETWORK" || (e as any)?.message?.includes("Network")) {
+        try {
+          const projetoSelecionado = projetoMedicao || "PROJETO-TESTE";
+          const consumos: Array<{ tipo: string; codigoItem: string; quantidade: number }> = [];
+          const qResina = Number(resinaQuantidade || 0);
+          const qMassa = Number(massaQuantidade || 0);
+          const qPU = Number(puMassaPeso || 0);
+          const qGel = Number(gelPeso || 0);
+
+          if (resinaTipo && qResina > 0) consumos.push({ tipo: "Resina", codigoItem: resinaTipo, quantidade: qResina });
+          if (massaTipo && qMassa > 0) consumos.push({ tipo: "Massa", codigoItem: massaTipo, quantidade: qMassa });
+          if (puTipo && qPU > 0) consumos.push({ tipo: "PU", codigoItem: puTipo, quantidade: qPU });
+          if (gelTipo && qGel > 0) consumos.push({ tipo: "Gel", codigoItem: gelTipo, quantidade: qGel });
+
+          const dadosComuns = {
+            projeto: projetoSelecionado,
+            torre: torreMedicao || null,
+            origem: "web",
+            dia,
+            semana,
+            cliente,
+            escala,
+            quantidadeTecnicos: qtdTecnicos ? Number(qtdTecnicos) : null,
+            tecnicoLider,
+            nomesTecnicos,
+            supervisor,
+            tipoIntervalo,
+            tipoAcesso,
+            pa,
+            plataforma,
+            equipe,
+            tipoHora,
+            quantidadeEventos: qtdEventos ? Number(qtdEventos) : null,
+            horaInicio,
+            horaFim,
+            tipoDano,
+            danoCodigo,
+            larguraDanoMm: larguraDano ? Number(larguraDano) : null,
+            comprimentoDanoMm: comprimentoDano ? Number(comprimentoDano) : null,
+            etapaProcesso,
+            etapaLixamento,
+            resinaTipo: resinaTipo ? materialPorCodigo(resinaTipo)?.descricao || null : null,
+            resinaQuantidade: resinaQuantidade ? Number(resinaQuantidade) : null,
+            resinaCatalisador,
+            resinaLote,
+            resinaValidade,
+            massaTipo: massaTipo ? materialPorCodigo(massaTipo)?.descricao || null : null,
+            massaQuantidade: massaQuantidade ? Number(massaQuantidade) : null,
+            massaCatalisador,
+            massaLote,
+            massaValidade,
+            nucleoTipo,
+            nucleoEspessuraMm: nucleoEspessura ? Number(nucleoEspessura) : null,
+            puTipo: puTipo ? materialPorCodigo(puTipo)?.descricao || null : null,
+            puMassaPeso: puMassaPeso ? Number(puMassaPeso) : null,
+            puCatalisadorPeso: puCatalisadorPeso ? Number(puCatalisadorPeso) : null,
+            puLote,
+            puValidade,
+            gelTipo: gelTipo ? materialPorCodigo(gelTipo)?.descricao || null : null,
+            gelPeso: gelPeso ? Number(gelPeso) : null,
+            gelCatalisadorPeso: gelCatalisadorPeso ? Number(gelCatalisadorPeso) : null,
+            gelLote,
+            gelValidade,
+            retrabalho: retrabalho === "Sim",
+          };
+
+          for (const c of consumos) {
+            const material = materialPorCodigo(c.codigoItem);
+            if (material) {
+              const dadosApontamento = {
+                codigoItem: material.codigoItem,
+                quantidadeConsumida: Number(c.quantidade),
+                ...dadosComuns,
+              };
+              await salvarApontamentoOffline(dadosApontamento);
+            }
+          }
+
+          setErro(null);
+          setMensagemImportacao(
+            `⚠️ Erro de conexão. Apontamento salvo offline! ${consumos.length} material(is) serão sincronizados quando voltar a conexão.`
+          );
+          await atualizarContadorPendentes();
+          limparFormularioMedicao();
+          return;
+        } catch (offlineError) {
+          console.error("Erro ao salvar offline:", offlineError);
+        }
+      }
+      
       setErro("Erro ao registrar medição.");
     }
   }
+
+  // Função auxiliar para limpar formulário
+  const limparFormularioMedicao = () => {
+    setProjetoMedicao("");
+    setTorreMedicao("");
+    setDia("");
+    setSemana("");
+    setCliente("");
+    setEscala("");
+    setQtdTecnicos("");
+    setTecnicoLider("");
+    setNomesTecnicos("");
+    setSupervisor("");
+    setTipoIntervalo("");
+    setTipoAcesso("");
+    setPa("");
+    setPlataforma("");
+    setEquipe("");
+    setTipoHora("");
+    setQtdEventos("");
+    setHoraInicio("");
+    setHoraFim("");
+    setTipoDano("");
+    setDanoCodigo("");
+    setLarguraDano("");
+    setComprimentoDano("");
+    setEtapaProcesso("");
+    setEtapaLixamento("");
+    setResinaTipo("");
+    setResinaQuantidade("");
+    setResinaCatalisador("");
+    setResinaLote("");
+    setResinaValidade("");
+    setMassaTipo("");
+    setMassaQuantidade("");
+    setMassaCatalisador("");
+    setMassaLote("");
+    setMassaValidade("");
+    setNucleoTipo("");
+    setNucleoEspessura("");
+    setPuTipo("");
+    setPuMassaPeso("");
+    setPuCatalisadorPeso("");
+    setPuLote("");
+    setPuValidade("");
+    setGelTipo("");
+    setGelPeso("");
+    setGelCatalisadorPeso("");
+    setGelLote("");
+    setGelValidade("");
+    setRetrabalho("");
+  };
+
 
   async function salvarMaterial(e: React.FormEvent) {
     e.preventDefault();
@@ -1153,8 +1402,49 @@ export function App() {
             }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
                 <div>
-                  <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#1f2937", margin: 0 }}>Controle de Materiais</h1>
-                  <p style={{ fontSize: "0.875rem", color: "#6b7280", margin: "4px 0 0 0" }}>Módulo web – apontamento e controle de materiais.</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#1f2937", margin: 0 }}>Controle de Materiais</h1>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          padding: "4px 10px",
+                          borderRadius: "12px",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          background: isOnline ? "#d1fae5" : "#fee2e2",
+                          color: isOnline ? "#065f46" : "#991b1b",
+                        }}
+                      >
+                        <span>{isOnline ? "🟢" : "🔴"}</span>
+                        <span>{isOnline ? "Online" : "Offline"}</span>
+                      </div>
+                      {apontamentosPendentes > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "4px 10px",
+                            borderRadius: "12px",
+                            fontSize: "0.75rem",
+                            fontWeight: 600,
+                            background: "#fef3c7",
+                          color: "#92400e",
+                          }}
+                        >
+                          <span>⏳</span>
+                          <span>{apontamentosPendentes} pendente(s)</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <p style={{ fontSize: "0.875rem", color: "#6b7280", margin: "4px 0 0 0" }}>
+                    Módulo web – apontamento e controle de materiais.
+                    {!isOnline && " (Modo offline: apontamentos serão salvos localmente e sincronizados quando voltar a conexão)"}
+                  </p>
                 </div>
                 <button
                   type="button"
