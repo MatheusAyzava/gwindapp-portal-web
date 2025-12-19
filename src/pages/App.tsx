@@ -494,7 +494,7 @@ export function App() {
   async function carregarMateriais() {
     try {
       setLoading(true);
-      const resposta = await axios.get<Material[]>(`${API_BASE_URL}/materiais`, { timeout: 20000 });
+      const resposta = await axios.get<Material[]>(`${API_BASE_URL}/materiais`, { timeout: 60000 }); // 60s para mobile
       setMateriais(resposta.data);
       setErro(null);
     } catch (e) {
@@ -503,7 +503,10 @@ export function App() {
         (e as any)?.response?.data?.error ||
         (e as any)?.message ||
         "Erro ao carregar materiais.";
+      // Não quebrar a renderização - apenas mostrar erro mas manter seções visíveis
       setErro(`Erro ao carregar materiais: ${msg}`);
+      // Se já tiver materiais carregados antes, manter (não limpar)
+      // Se não tiver, deixar vazio mas permitir que a seção apareça
     } finally {
       setLoading(false);
     }
@@ -511,7 +514,7 @@ export function App() {
 
   async function carregarMedicoes() {
     try {
-      const resposta = await axios.get<any[]>(`${API_BASE_URL}/medicoes`, { timeout: 20000 });
+      const resposta = await axios.get<any[]>(`${API_BASE_URL}/medicoes`, { timeout: 60000 }); // 60s para mobile
       const linhas: MedicaoGrid[] = resposta.data.map((m) => ({
         id: m.id,
         dia: m.dia,
@@ -1887,9 +1890,33 @@ export function App() {
         <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 0 }}>
           API: {API_BASE_URL}
         </p>
-        {loading && <p>Carregando...</p>}
-        {erro && <p className="error">{erro}</p>}
-        {!loading && materiais.length === 0 && <p>Nenhum material cadastrado.</p>}
+        {loading && (
+          <div style={{ padding: "20px", textAlign: "center", color: "#6b7280" }}>
+            <p>Carregando materiais...</p>
+          </div>
+        )}
+        {erro && (
+          <div style={{ 
+            padding: "12px", 
+            background: "#fef2f2", 
+            border: "1px solid #fecaca", 
+            borderRadius: "8px", 
+            marginBottom: "16px",
+            color: "#991b1b",
+            fontSize: "0.875rem"
+          }}>
+            ⚠️ {erro}
+            <br />
+            <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>
+              A tabela abaixo pode estar vazia ou desatualizada. Tente recarregar a página.
+            </span>
+          </div>
+        )}
+        {!loading && !erro && materiais.length === 0 && (
+          <div style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>
+            <p>Nenhum material cadastrado. Importe os materiais do Excel para ver o estoque.</p>
+          </div>
+        )}
 
         {materiais.length > 0 && (
           <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
@@ -2028,9 +2055,34 @@ export function App() {
             </p>
           </div>
           <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", padding: "8px 16px 16px" }}>
-            {medicoesSmartsheet.length === 0 ? (
-              <p style={{ color: "#6b7280" }}>Nenhum registro ainda.</p>
-            ) : (
+            {loading && (
+              <div style={{ padding: "20px", textAlign: "center", color: "#6b7280" }}>
+                <p>Carregando registros...</p>
+              </div>
+            )}
+            {erro && (
+              <div style={{ 
+                padding: "12px", 
+                background: "#fef2f2", 
+                border: "1px solid #fecaca", 
+                borderRadius: "8px", 
+                marginBottom: "16px",
+                color: "#991b1b",
+                fontSize: "0.875rem"
+              }}>
+                ⚠️ Erro ao carregar registros: {erro}
+                <br />
+                <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>
+                  A tabela abaixo pode estar vazia ou desatualizada. Tente recarregar a página.
+                </span>
+              </div>
+            )}
+            {!loading && medicoesSmartsheet.length === 0 && !erro && (
+              <div style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>
+                <p>Nenhum registro ainda.</p>
+              </div>
+            )}
+            {medicoesSmartsheet.length > 0 && (
               <table className="table" style={{ width: "100%", minWidth: "1800px", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ background: "#f9fafb", borderBottom: "2px solid #e5e7eb" }}>
