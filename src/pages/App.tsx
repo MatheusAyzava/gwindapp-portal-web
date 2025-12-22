@@ -216,13 +216,29 @@ export function App() {
   async function verificarStatusSmartsheet() {
     setVerificandoSmartsheet(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/smartsheet/status`, { timeout: 10000 });
+      console.log("[Diagnóstico] Tentando conectar ao backend:", API_BASE_URL);
+      const response = await axios.get(`${API_BASE_URL}/smartsheet/status`, { 
+        timeout: 30000, // Aumentar timeout para 30s
+      });
+      console.log("[Diagnóstico] Resposta do backend:", response.data);
       setSmartsheetStatus(response.data);
     } catch (e: any) {
+      console.error("[Diagnóstico] Erro completo:", e);
+      const erroMsg = e?.code === "ECONNABORTED" 
+        ? "Timeout: O backend não respondeu em 30 segundos. Verifique se o backend está rodando no Render."
+        : e?.code === "ERR_NETWORK" || e?.message?.includes("Network")
+        ? `Erro de rede: Não foi possível conectar ao backend em ${API_BASE_URL}. Verifique se a URL está correta.`
+        : e?.response?.status === 404
+        ? `Endpoint não encontrado. Verifique se o backend está atualizado e tem o endpoint /smartsheet/status.`
+        : e?.response?.data?.erro || e?.message || "Erro desconhecido ao conectar com o backend";
+      
       setSmartsheetStatus({
-        erro: e?.response?.data?.erro || e?.message || "Erro ao conectar com o backend",
+        erro: erroMsg,
         tokenConfigurado: false,
         sheetMedicoesConfigurado: false,
+        urlBackend: API_BASE_URL,
+        codigoErro: e?.code,
+        statusHttp: e?.response?.status,
       });
     } finally {
       setVerificandoSmartsheet(false);
@@ -1466,6 +1482,21 @@ export function App() {
                     <span><strong>Planilha Acessível:</strong> {smartsheetStatus.sheetMedicoesAcessivel ? "Sim" : "Não"}</span>
                   </div>
                 )}
+                {smartsheetStatus.urlBackend && (
+                  <div style={{ marginTop: 8, fontSize: "0.875rem", color: "#6b7280" }}>
+                    <strong>URL do Backend:</strong> {smartsheetStatus.urlBackend}
+                  </div>
+                )}
+                {smartsheetStatus.codigoErro && (
+                  <div style={{ marginTop: 4, fontSize: "0.875rem", color: "#6b7280" }}>
+                    <strong>Código do Erro:</strong> {smartsheetStatus.codigoErro}
+                  </div>
+                )}
+                {smartsheetStatus.statusHttp && (
+                  <div style={{ marginTop: 4, fontSize: "0.875rem", color: "#6b7280" }}>
+                    <strong>Status HTTP:</strong> {smartsheetStatus.statusHttp}
+                  </div>
+                )}
                 {smartsheetStatus.erro && (
                   <div style={{
                     padding: 12,
@@ -1475,6 +1506,16 @@ export function App() {
                     marginTop: 8,
                   }}>
                     <strong>Erro:</strong> {smartsheetStatus.erro}
+                    {smartsheetStatus.urlBackend && (
+                      <div style={{ marginTop: 8, fontSize: "0.875rem" }}>
+                        <strong>Como corrigir:</strong>
+                        <ul style={{ margin: "8px 0 0 20px", padding: 0 }}>
+                          <li>Verifique se o backend está rodando no Render</li>
+                          <li>Confirme se a URL está correta: {smartsheetStatus.urlBackend}</li>
+                          <li>No Netlify, configure a variável <code>VITE_API_URL</code> com a URL do backend</li>
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
                 {!smartsheetStatus.erro && smartsheetStatus.tokenValido && smartsheetStatus.sheetMedicoesAcessivel && (
