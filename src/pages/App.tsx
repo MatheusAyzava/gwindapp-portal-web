@@ -702,6 +702,10 @@ export function App() {
       }
 
       // Modo online: enviar normalmente
+      console.log("[Frontend] Iniciando envio de apontamento para backend...");
+      console.log("[Frontend] URL da API:", `${API_BASE_URL}/medicoes`);
+      console.log("[Frontend] Dados comuns:", dadosComuns);
+      
       for (const c of consumos) {
         const material = materialPorCodigo(c.codigoItem);
         if (!material) {
@@ -709,13 +713,28 @@ export function App() {
           return;
         }
 
-        await axios.post(`${API_BASE_URL}/medicoes`, {
+        const payload = {
           codigoItem: material.codigoItem,
           quantidadeConsumida: Number(c.quantidade),
           ...dadosComuns,
-        });
+        };
+        
+        console.log(`[Frontend] Enviando consumo ${c.tipo} (${c.codigoItem}):`, payload);
+        
+        try {
+          const response = await axios.post(`${API_BASE_URL}/medicoes`, payload, {
+            timeout: 60000,
+          });
+          console.log(`[Frontend] ✅ Resposta do backend para ${c.tipo}:`, response.data);
+        } catch (apiError: any) {
+          console.error(`[Frontend] ❌ Erro ao enviar ${c.tipo}:`, apiError);
+          console.error(`[Frontend] Status:`, apiError?.response?.status);
+          console.error(`[Frontend] Mensagem:`, apiError?.response?.data || apiError?.message);
+          throw apiError; // Re-lançar para ser capturado pelo catch externo
+        }
       }
 
+      console.log("[Frontend] ✅ Todos os consumos foram enviados com sucesso!");
       setErro(null);
       setMensagemImportacao("✅ Apontamento registrado com sucesso!");
       
