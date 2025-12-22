@@ -1682,127 +1682,6 @@ export function App() {
 
       {aba === "materiais" && (
         <>
-      {/* Importação em massa - PRIMEIRO, mais visível */}
-      <section className="card" style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)", border: "2px solid #667eea" }}>
-        <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#1e40af", marginBottom: "8px" }}>
-          ⚡ Importar Todos os Materiais de Uma Vez
-        </h2>
-        <p style={{ fontSize: 14, color: "#1e40af", marginBottom: 24, fontWeight: 500 }}>
-          Importe todos os materiais da planilha Excel de uma só vez! O sistema identifica automaticamente todas as colunas.
-        </p>
-        
-        {/* Opção principal: colar dados (mais simples) */}
-        <div style={{ marginBottom: "32px" }}>
-          <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "8px", color: "#1f2937" }}>
-            📋 Método Rápido: Cole a planilha do Excel
-          </h3>
-          <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "12px" }}>
-            Abra o Excel, selecione TODAS as colunas (incluindo o cabeçalho) e cole aqui. É mais rápido!
-          </p>
-          <form onSubmit={importarMateriais}>
-            <textarea
-              value={textoImportacao}
-              onChange={(e) => setTextoImportacao(e.target.value)}
-              placeholder="1. Abra o Excel e selecione TODAS as colunas (incluindo cabeçalho)&#10;2. Copie (Ctrl+C)&#10;3. Cole aqui (Ctrl+V)&#10;&#10;O sistema identifica automaticamente: Código do Estoque, Descrição do E, Nº do item, Descrição do item, Unidade, Em estoque, Confirmado, Pedido, Disponível, Preço, Total, Cód. Projeto, Desc. Projeto, Centro de Custos..."
-              style={{
-                width: "100%",
-                minHeight: "200px",
-                padding: "12px",
-                borderRadius: "8px",
-                border: "2px solid #667eea",
-                fontSize: "0.875rem",
-                fontFamily: "monospace",
-                marginBottom: "12px",
-                backgroundColor: "#ffffff",
-              }}
-            />
-            <button type="submit" className="primary-button" style={{
-              padding: "14px 28px",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "1.125rem",
-              fontWeight: 700,
-              cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)",
-            }}>
-              🚀 Importar Todos os Materiais
-            </button>
-          </form>
-        </div>
-
-        {/* Opção alternativa: upload de arquivo */}
-        <div style={{ 
-          borderTop: "2px solid #cbd5e1", 
-          paddingTop: "24px",
-        }}>
-          <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "8px", color: "#374151" }}>
-            📁 Ou faça upload do arquivo Excel (.xlsx ou .xls)
-          </h3>
-          <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "12px" }}>
-            Se preferir, você pode fazer upload do arquivo completo.
-          </p>
-          <form onSubmit={importarArquivoExcel}>
-            <div style={{ marginBottom: "12px" }}>
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setArquivoExcel(file);
-                    setErro(null);
-                    setMensagemImportacao(null);
-                  }
-                }}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "1px solid #d1d5db",
-                  fontSize: "0.875rem",
-                  cursor: "pointer",
-                }}
-              />
-            </div>
-            {arquivoExcel && (
-              <p style={{ fontSize: "0.875rem", color: "#16a34a", marginBottom: "12px" }}>
-                Arquivo selecionado: <strong>{arquivoExcel.name}</strong>
-              </p>
-            )}
-            <button 
-              type="submit" 
-              className="primary-button" 
-              disabled={!arquivoExcel || loading}
-              style={{
-                padding: "12px 24px",
-                background: arquivoExcel && !loading 
-                  ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" 
-                  : "#9ca3af",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "1rem",
-                fontWeight: 600,
-                cursor: arquivoExcel && !loading ? "pointer" : "not-allowed",
-                boxShadow: arquivoExcel && !loading 
-                  ? "0 4px 12px rgba(102, 126, 234, 0.3)" 
-                  : "none",
-              }}
-            >
-              {loading ? "Importando..." : "Importar do Excel"}
-            </button>
-          </form>
-        </div>
-
-        {mensagemImportacao && (
-          <p style={{ marginTop: 16, fontSize: 14, color: "#16a34a", fontWeight: 500, padding: "12px", backgroundColor: "#f0fdf4", borderRadius: "8px", border: "1px solid #86efac" }}>
-            ✅ {mensagemImportacao}
-          </p>
-        )}
-      </section>
-
       {/* Dashboard de Estoque */}
       <section className="card">
         <h2 style={{ marginBottom: "20px" }}>Dashboard de Estoque</h2>
@@ -2200,6 +2079,127 @@ export function App() {
         )}
       </section>
 
+      {/* Importação em massa - NO FINAL DA PÁGINA */}
+      <section className="card" style={{ background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)", border: "2px solid #667eea" }}>
+        <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#1e40af", marginBottom: "8px" }}>
+          ⚡ Importar Todos os Materiais de Uma Vez
+        </h2>
+        <p style={{ fontSize: 14, color: "#1e40af", marginBottom: 24, fontWeight: 500 }}>
+          Importe todos os materiais da planilha Excel de uma só vez! O sistema identifica automaticamente todas as colunas.
+        </p>
+        
+        {/* Opção principal: colar dados (mais simples) */}
+        <div style={{ marginBottom: "32px" }}>
+          <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "8px", color: "#1f2937" }}>
+            📋 Método Rápido: Cole a planilha do Excel
+          </h3>
+          <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "12px" }}>
+            Abra o Excel, selecione TODAS as colunas (incluindo o cabeçalho) e cole aqui. É mais rápido!
+          </p>
+          <form onSubmit={importarMateriais}>
+            <textarea
+              value={textoImportacao}
+              onChange={(e) => setTextoImportacao(e.target.value)}
+              placeholder="1. Abra o Excel e selecione TODAS as colunas (incluindo cabeçalho)&#10;2. Copie (Ctrl+C)&#10;3. Cole aqui (Ctrl+V)&#10;&#10;O sistema identifica automaticamente: Código do Estoque, Descrição do E, Nº do item, Descrição do item, Unidade, Em estoque, Confirmado, Pedido, Disponível, Preço, Total, Cód. Projeto, Desc. Projeto, Centro de Custos..."
+              style={{
+                width: "100%",
+                minHeight: "200px",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "2px solid #667eea",
+                fontSize: "0.875rem",
+                fontFamily: "monospace",
+                marginBottom: "12px",
+                backgroundColor: "#ffffff",
+              }}
+            />
+            <button type="submit" className="primary-button" style={{
+              padding: "14px 28px",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "1.125rem",
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)",
+            }}>
+              🚀 Importar Todos os Materiais
+            </button>
+          </form>
+        </div>
+
+        {/* Opção alternativa: upload de arquivo */}
+        <div style={{ 
+          borderTop: "2px solid #cbd5e1", 
+          paddingTop: "24px",
+        }}>
+          <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "8px", color: "#374151" }}>
+            📁 Ou faça upload do arquivo Excel (.xlsx ou .xls)
+          </h3>
+          <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "12px" }}>
+            Se preferir, você pode fazer upload do arquivo completo.
+          </p>
+          <form onSubmit={importarArquivoExcel}>
+            <div style={{ marginBottom: "12px" }}>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setArquivoExcel(file);
+                    setErro(null);
+                    setMensagemImportacao(null);
+                  }
+                }}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                }}
+              />
+            </div>
+            {arquivoExcel && (
+              <p style={{ fontSize: "0.875rem", color: "#16a34a", marginBottom: "12px" }}>
+                Arquivo selecionado: <strong>{arquivoExcel.name}</strong>
+              </p>
+            )}
+            <button 
+              type="submit" 
+              className="primary-button" 
+              disabled={!arquivoExcel || loading}
+              style={{
+                padding: "12px 24px",
+                background: arquivoExcel && !loading 
+                  ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" 
+                  : "#9ca3af",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "1rem",
+                fontWeight: 600,
+                cursor: arquivoExcel && !loading ? "pointer" : "not-allowed",
+                boxShadow: arquivoExcel && !loading 
+                  ? "0 4px 12px rgba(102, 126, 234, 0.3)" 
+                  : "none",
+              }}
+            >
+              {loading ? "Importando..." : "Importar do Excel"}
+            </button>
+          </form>
+        </div>
+
+        {mensagemImportacao && (
+          <p style={{ marginTop: 16, fontSize: 14, color: "#16a34a", fontWeight: 500, padding: "12px", backgroundColor: "#f0fdf4", borderRadius: "8px", border: "1px solid #86efac" }}>
+            ✅ {mensagemImportacao}
+          </p>
+        )}
+      </section>
+
         </>
       )}
 
@@ -2419,38 +2419,6 @@ export function App() {
         </div>
       )}
 
-
-      <section className="card">
-        <h2>Integração com Smartsheet</h2>
-        <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
-          Você pode importar os materiais diretamente da planilha de estoque do
-          Smartsheet.
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          <button
-            type="button"
-            className="primary-button"
-            onClick={async () => {
-              try {
-                setLoading(true);
-                await axios.post(`${API_BASE_URL}/materiais/import-smartsheet`);
-                await carregarMateriais();
-                setMensagemImportacao(
-                  "Importação do Smartsheet concluída com sucesso.",
-                );
-              } catch (e: any) {
-                console.error(e);
-                const mensagemErro = e?.response?.data?.mensagem || e?.response?.data?.error || "Erro ao importar materiais do Smartsheet.";
-                setErro(mensagemErro);
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
-            Importar do Smartsheet
-          </button>
-        </div>
-      </section>
 
       <section className="card" style={{ border: "2px solid #ef4444" }}>
         <h2 style={{ color: "#dc2626" }}>⚠️ Gerenciamento de Dados</h2>
