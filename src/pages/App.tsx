@@ -209,6 +209,25 @@ export function App() {
   const [modulo, setModulo] = useState<"home" | "materiais" | "passagens">(
     "home",
   );
+  const [smartsheetStatus, setSmartsheetStatus] = useState<any>(null);
+  const [verificandoSmartsheet, setVerificandoSmartsheet] = useState(false);
+
+  // Função para verificar status do Smartsheet
+  async function verificarStatusSmartsheet() {
+    setVerificandoSmartsheet(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/smartsheet/status`, { timeout: 10000 });
+      setSmartsheetStatus(response.data);
+    } catch (e: any) {
+      setSmartsheetStatus({
+        erro: e?.response?.data?.erro || e?.message || "Erro ao conectar com o backend",
+        tokenConfigurado: false,
+        sheetMedicoesConfigurado: false,
+      });
+    } finally {
+      setVerificandoSmartsheet(false);
+    }
+  }
 
   // Função removida - agora Passagens é integrado no portal
 
@@ -1399,6 +1418,79 @@ export function App() {
               </span>
             </button>
           </div>
+        </section>
+      )}
+
+      {modulo === "home" && (
+        <section className="card" style={{ border: "2px solid #3b82f6" }}>
+          <h2 style={{ color: "#1e40af" }}>🔧 Diagnóstico do Smartsheet</h2>
+          <p style={{ color: "#6b7280", marginBottom: 16 }}>
+            Verifique se a integração com o Smartsheet está configurada corretamente.
+          </p>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={verificarStatusSmartsheet}
+            disabled={verificandoSmartsheet}
+            style={{ marginBottom: 16 }}
+          >
+            {verificandoSmartsheet ? "Verificando..." : "Verificar Status"}
+          </button>
+          
+          {smartsheetStatus && (
+            <div style={{
+              padding: 16,
+              background: "#f9fafb",
+              borderRadius: 8,
+              border: "1px solid #e5e7eb",
+            }}>
+              <h3 style={{ marginTop: 0, marginBottom: 12 }}>Status da Configuração:</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span>{smartsheetStatus.tokenConfigurado ? "✅" : "❌"}</span>
+                  <span><strong>Token:</strong> {smartsheetStatus.tokenConfigurado ? "Configurado" : "Não configurado"}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span>{smartsheetStatus.sheetMedicoesConfigurado ? "✅" : "❌"}</span>
+                  <span><strong>Sheet ID de Medições:</strong> {smartsheetStatus.sheetMedicoesConfigurado ? "Configurado" : "Não configurado"}</span>
+                </div>
+                {smartsheetStatus.tokenValido !== undefined && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span>{smartsheetStatus.tokenValido ? "✅" : "❌"}</span>
+                    <span><strong>Token Válido:</strong> {smartsheetStatus.tokenValido ? "Sim" : "Não"}</span>
+                  </div>
+                )}
+                {smartsheetStatus.sheetMedicoesAcessivel !== undefined && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span>{smartsheetStatus.sheetMedicoesAcessivel ? "✅" : "❌"}</span>
+                    <span><strong>Planilha Acessível:</strong> {smartsheetStatus.sheetMedicoesAcessivel ? "Sim" : "Não"}</span>
+                  </div>
+                )}
+                {smartsheetStatus.erro && (
+                  <div style={{
+                    padding: 12,
+                    background: "#fee2e2",
+                    borderRadius: 6,
+                    color: "#991b1b",
+                    marginTop: 8,
+                  }}>
+                    <strong>Erro:</strong> {smartsheetStatus.erro}
+                  </div>
+                )}
+                {!smartsheetStatus.erro && smartsheetStatus.tokenValido && smartsheetStatus.sheetMedicoesAcessivel && (
+                  <div style={{
+                    padding: 12,
+                    background: "#d1fae5",
+                    borderRadius: 6,
+                    color: "#065f46",
+                    marginTop: 8,
+                  }}>
+                    ✅ <strong>Tudo configurado corretamente!</strong> Os apontamentos serão salvos no Smartsheet.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
