@@ -248,7 +248,8 @@ export function App() {
           console.log("Service Worker registrado:", registration);
         })
         .catch((error) => {
-          console.error("Erro ao registrar Service Worker:", error);
+          // Não bloquear a aplicação se o Service Worker falhar
+          console.warn("Service Worker não pôde ser registrado (não crítico):", error.message);
         });
     }
   }, []);
