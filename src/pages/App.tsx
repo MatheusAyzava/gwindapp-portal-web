@@ -737,40 +737,44 @@ export function App() {
         return;
       }
 
-      // Modo online: enviar normalmente
+      // Modo online: enviar todos os consumos em uma única requisição
       console.log("[Frontend] Iniciando envio de apontamento para backend...");
       console.log("[Frontend] URL da API:", `${API_BASE_URL}/medicoes`);
       console.log("[Frontend] Dados comuns:", dadosComuns);
       
-      for (const c of consumos) {
+      // Preparar array de consumos com informações completas dos materiais
+      const consumosCompletos = consumos.map(c => {
         const material = materialPorCodigo(c.codigoItem);
         if (!material) {
-          setErro(`Não encontrei no estoque o Nº do item "${c.codigoItem}" para "${c.tipo}".`);
-          return;
+          throw new Error(`Não encontrei no estoque o Nº do item "${c.codigoItem}" para "${c.tipo}".`);
         }
-
-        const payload = {
+        return {
           codigoItem: material.codigoItem,
           quantidadeConsumida: Number(c.quantidade),
-          ...dadosComuns,
         };
-        
-        console.log(`[Frontend] Enviando consumo ${c.tipo} (${c.codigoItem}):`, payload);
-        
-        try {
-          const response = await axios.post(`${API_BASE_URL}/medicoes`, payload, {
-            timeout: 60000,
-          });
-          console.log(`[Frontend] ✅ Resposta do backend para ${c.tipo}:`, response.data);
-        } catch (apiError: any) {
-          console.error(`[Frontend] ❌ Erro ao enviar ${c.tipo}:`, apiError);
-          console.error(`[Frontend] Status:`, apiError?.response?.status);
-          console.error(`[Frontend] Mensagem:`, apiError?.response?.data || apiError?.message);
-          throw apiError; // Re-lançar para ser capturado pelo catch externo
-        }
+      });
+      
+      // Enviar todos os consumos em uma única requisição
+      const payload = {
+        consumos: consumosCompletos, // Array de consumos
+        ...dadosComuns,
+      };
+      
+      console.log(`[Frontend] Enviando ${consumosCompletos.length} consumo(s) em uma única requisição:`, payload);
+      
+      try {
+        const response = await axios.post(`${API_BASE_URL}/medicoes`, payload, {
+          timeout: 60000,
+        });
+        console.log(`[Frontend] ✅ Resposta do backend:`, response.data);
+      } catch (apiError: any) {
+        console.error(`[Frontend] ❌ Erro ao enviar apontamento:`, apiError);
+        console.error(`[Frontend] Status:`, apiError?.response?.status);
+        console.error(`[Frontend] Mensagem:`, apiError?.response?.data || apiError?.message);
+        throw apiError; // Re-lançar para ser capturado pelo catch externo
       }
 
-      console.log("[Frontend] ✅ Todos os consumos foram enviados com sucesso!");
+      console.log("[Frontend] ✅ Apontamento enviado com sucesso!");
       setErro(null);
       setMensagemImportacao("✅ Apontamento registrado com sucesso!");
       
